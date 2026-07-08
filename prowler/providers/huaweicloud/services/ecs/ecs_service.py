@@ -33,14 +33,20 @@ class ECS(HuaweiCloudService):
         self.instances["ecs-mock-001"] = Instance(
             id="ecs-mock-001", name="web-server-public", region=region,
             status="ACTIVE", public_ip="123.45.67.89",
+            key_name="web-keypair",
+            security_groups={"sg-mock-default": "default"},
         )
         self.instances["ecs-mock-002"] = Instance(
             id="ecs-mock-002", name="app-server-private", region=region,
             status="ACTIVE", public_ip="",
+            key_name="app-keypair",
+            security_groups={"sg-mock-restricted": "restricted-sg"},
         )
         self.instances["ecs-mock-003"] = Instance(
             id="ecs-mock-003", name="db-server-private", region=region,
             status="ACTIVE", public_ip="",
+            key_name="",
+            security_groups={},
         )
 
     def _list_servers_details(self, regional_client):
@@ -72,6 +78,14 @@ class ECS(HuaweiCloudService):
                             elif hasattr(server_data, "addresses") and server_data.addresses:
                                 public_ip = self._extract_floating_ip(server_data.addresses)
 
+                            security_groups = {}
+                            if hasattr(server_data, "security_groups") and server_data.security_groups:
+                                for sg in server_data.security_groups:
+                                    sg_name = getattr(sg, "name", "")
+                                    sg_id = getattr(sg, "id", sg_name)
+                                    if sg_id:
+                                        security_groups[sg_id] = sg_name
+
                             self.instances[server_data.id] = Instance(
                                 id=server_data.id,
                                 name=getattr(server_data, "name", server_data.id),
@@ -82,6 +96,8 @@ class ECS(HuaweiCloudService):
                                 vpc_id=self._extract_vpc_id(server_data),
                                 enterprise_project_id=getattr(server_data, "enterprise_project_id", ""),
                                 created_at=getattr(server_data, "created", None),
+                                key_name=getattr(server_data, "key_name", ""),
+                                security_groups=security_groups,
                             )
 
                     if len(response.servers) < 50:
@@ -131,3 +147,5 @@ class Instance(BaseModel):
     vpc_id: str = ""
     enterprise_project_id: str = ""
     created_at: Optional[str] = None
+    key_name: str = ""
+    security_groups: Dict[str, str] = {}
