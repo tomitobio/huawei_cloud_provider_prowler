@@ -1,0 +1,2 @@
+prowler==5.31.0
+pytest>=8.0
