@@ -2,6 +2,10 @@
 
 A custom [Prowler](https://github.com/prowler-cloud/prowler) provider for **Huawei Cloud**, implementing security best-practice checks across 10 services.
 
+# Introduction
+
+Hi, I am Tomas Tobio. As a student of Informatics Engineering and Huawei Cloud user, I saw the opportunity to use Prowler as I start to get into infrastructure cibersecurity. I hope this project (and repo) becomes the first of many in my professional joruney.
+
 ## Services & Checks
 
 | Service | Check | Severity | Description |
