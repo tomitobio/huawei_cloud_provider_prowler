@@ -17,6 +17,7 @@ import { MongoDBAtlasProviderBadge } from "./mongodbatlas-provider-badge";
 import { OktaProviderBadge } from "./okta-provider-badge";
 import { OpenStackProviderBadge } from "./openstack-provider-badge";
 import { OracleCloudProviderBadge } from "./oraclecloud-provider-badge";
+import { HuaweiCloudProviderBadge } from "./huaweicloud-provider-badge";
 import { VercelProviderBadge } from "./vercel-provider-badge";
 
 export {
@@ -27,6 +28,7 @@ export {
   GCPProviderBadge,
   GitHubProviderBadge,
   GoogleWorkspaceProviderBadge,
+  HuaweiCloudProviderBadge,
   IacProviderBadge,
   ImageProviderBadge,
   KS8ProviderBadge,
@@ -56,4 +58,5 @@ export const PROVIDER_BADGE_BY_NAME: Record<string, FC<IconSvgProps>> = {
   OpenStack: OpenStackProviderBadge,
   Vercel: VercelProviderBadge,
   Okta: OktaProviderBadge,
+  "Huawei Cloud": HuaweiCloudProviderBadge,
 };

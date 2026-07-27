@@ -274,6 +274,32 @@ export const buildOktaSecret = (formData: FormData) => {
   return filterEmptyValues(secret);
 };
 
+export const buildHuaweiCloudSecret = (formData: FormData) => {
+  const secret = {
+    [ProviderCredentialFields.HUAWEICLOUD_ACCESS_KEY_ID]: getFormValue(
+      formData,
+      ProviderCredentialFields.HUAWEICLOUD_ACCESS_KEY_ID,
+    ),
+    [ProviderCredentialFields.HUAWEICLOUD_SECRET_ACCESS_KEY]: getFormValue(
+      formData,
+      ProviderCredentialFields.HUAWEICLOUD_SECRET_ACCESS_KEY,
+    ),
+    [ProviderCredentialFields.HUAWEICLOUD_REGION]: getFormValue(
+      formData,
+      ProviderCredentialFields.HUAWEICLOUD_REGION,
+    ),
+    [ProviderCredentialFields.HUAWEICLOUD_PROJECT_ID]: getFormValue(
+      formData,
+      ProviderCredentialFields.HUAWEICLOUD_PROJECT_ID,
+    ),
+    [ProviderCredentialFields.HUAWEICLOUD_DOMAIN_ID]: getFormValue(
+      formData,
+      ProviderCredentialFields.HUAWEICLOUD_DOMAIN_ID,
+    ),
+  };
+  return filterEmptyValues(secret);
+};
+
 export const buildOpenStackSecret = (formData: FormData) => {
   const secret = {
     [ProviderCredentialFields.OPENSTACK_CLOUDS_YAML_CONTENT]: getFormValue(
@@ -530,6 +556,10 @@ export const buildSecretConfig = (
     okta: () => ({
       secretType: "static",
       secret: buildOktaSecret(formData),
+    }),
+    huaweicloud: () => ({
+      secretType: "static",
+      secret: buildHuaweiCloudSecret(formData),
     }),
   };
 

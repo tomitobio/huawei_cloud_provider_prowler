@@ -254,6 +254,13 @@ export const useCredentialsForm = ({
           [ProviderCredentialFields.OKTA_CLIENT_ID]: "",
           [ProviderCredentialFields.OKTA_PRIVATE_KEY]: "",
         };
+      case "huaweicloud":
+        return {
+          ...baseDefaults,
+          [ProviderCredentialFields.HUAWEICLOUD_ACCESS_KEY_ID]: "",
+          [ProviderCredentialFields.HUAWEICLOUD_SECRET_ACCESS_KEY]: "",
+          [ProviderCredentialFields.HUAWEICLOUD_REGION]: "",
+        };
       default:
         return baseDefaults;
     }

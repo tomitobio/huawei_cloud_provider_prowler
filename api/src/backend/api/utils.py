@@ -187,6 +187,12 @@ def return_prowler_provider(
             from prowler.providers.okta.okta_provider import OktaProvider
 
             prowler_provider = OktaProvider
+        case Provider.ProviderChoices.HUAWEICLOUD.value:
+            from prowler.providers.huaweicloud.huaweicloud_provider import (
+                HuaweicloudProvider,
+            )
+
+            prowler_provider = HuaweicloudProvider
         case _:
             raise ValueError(f"Provider type {provider.provider} not supported")
     return prowler_provider
@@ -249,6 +255,33 @@ def get_prowler_provider_kwargs(
                 **prowler_provider_kwargs,
                 "region": {prowler_provider_kwargs["region"]},
             }
+    elif provider.provider == Provider.ProviderChoices.HUAWEICLOUD.value:
+        huaweicloud_kwargs = {}
+        if "huaweicloud_access_key_id" in prowler_provider_kwargs:
+            huaweicloud_kwargs["access_key_id"] = prowler_provider_kwargs[
+                "huaweicloud_access_key_id"
+            ]
+        if "huaweicloud_secret_access_key" in prowler_provider_kwargs:
+            huaweicloud_kwargs["secret_access_key"] = prowler_provider_kwargs[
+                "huaweicloud_secret_access_key"
+            ]
+        if "huaweicloud_region" in prowler_provider_kwargs and prowler_provider_kwargs[
+            "huaweicloud_region"
+        ]:
+            huaweicloud_kwargs["regions"] = [prowler_provider_kwargs["huaweicloud_region"]]
+        if "huaweicloud_project_id" in prowler_provider_kwargs and prowler_provider_kwargs[
+            "huaweicloud_project_id"
+        ]:
+            huaweicloud_kwargs["project_id"] = prowler_provider_kwargs[
+                "huaweicloud_project_id"
+            ]
+        if "huaweicloud_domain_id" in prowler_provider_kwargs and prowler_provider_kwargs[
+            "huaweicloud_domain_id"
+        ]:
+            huaweicloud_kwargs["domain_id"] = prowler_provider_kwargs[
+                "huaweicloud_domain_id"
+            ]
+        prowler_provider_kwargs = huaweicloud_kwargs
     elif provider.provider == Provider.ProviderChoices.OPENSTACK.value:
         # clouds_yaml_content, clouds_yaml_cloud and provider_id are validated
         # in the provider itself, so it's not needed here.
@@ -393,6 +426,14 @@ def prowler_provider_connection_test(provider: Provider) -> Connection:
         if prowler_provider_kwargs.get("registry_token"):
             image_kwargs["registry_token"] = prowler_provider_kwargs["registry_token"]
         return prowler_provider.test_connection(**image_kwargs)
+    elif provider.provider == Provider.ProviderChoices.HUAWEICLOUD.value:
+        huaweicloud_kwargs = get_prowler_provider_kwargs(provider)
+        huaweicloud_kwargs.pop("regions", None)
+        return prowler_provider.test_connection(
+            **huaweicloud_kwargs,
+            provider_id=provider.uid,
+            raise_on_exception=False,
+        )
     else:
         return prowler_provider.test_connection(
             **prowler_provider_kwargs,

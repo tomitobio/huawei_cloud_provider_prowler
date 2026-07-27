@@ -14,6 +14,7 @@ import {
   OktaProviderBadge,
   OpenStackProviderBadge,
   OracleCloudProviderBadge,
+  HuaweiCloudProviderBadge,
   VercelProviderBadge,
 } from "@/components/icons/providers-badge";
 import { ProviderType } from "@/types";
@@ -52,6 +53,8 @@ export const getProviderLogo = (provider: ProviderType) => {
       return <VercelProviderBadge width={35} height={35} />;
     case "okta":
       return <OktaProviderBadge width={35} height={35} />;
+    case "huaweicloud":
+      return <HuaweiCloudProviderBadge width={35} height={35} />;
     default:
       return null;
   }
@@ -91,6 +94,8 @@ export const getProviderName = (provider: ProviderType): string => {
       return "Vercel";
     case "okta":
       return "Okta";
+    case "huaweicloud":
+      return "Huawei Cloud";
     default:
       return "Unknown Provider";
   }

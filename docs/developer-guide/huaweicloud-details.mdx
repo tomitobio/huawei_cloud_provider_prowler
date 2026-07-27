@@ -1,0 +1,204 @@
+---
+title: 'Huawei Cloud Provider'
+---
+
+This page details the [Huawei Cloud](https://www.huaweicloud.com/) provider implementation in Prowler.
+
+By default, Prowler will audit all the Huawei Cloud regions that are available. To configure it, follow the [Huawei Cloud getting started guide](/user-guide/providers/huaweicloud/getting-started-huaweicloud).
+
+## Huawei Cloud Provider Classes Architecture
+
+The Huawei Cloud provider implementation follows the general [Provider structure](/developer-guide/provider). This section focuses on the Huawei Cloud-specific implementation, highlighting how the generic provider concepts are realized for Huawei Cloud in Prowler. For a full overview of the provider pattern, base classes, and extension guidelines, see [Provider documentation](/developer-guide/provider).
+
+### Main Class
+
+- **Location:** [`prowler/providers/huaweicloud/huaweicloud_provider.py`](https://github.com/prowler-cloud/prowler/blob/master/prowler/providers/huaweicloud/huaweicloud_provider.py)
+- **Base Class:** Inherits from `Provider` (see [base class details](https://github.com/prowler-cloud/prowler/blob/master/prowler/providers/common/provider.py)).
+- **Purpose:** Central orchestrator for Huawei Cloud-specific logic, session management, credential validation, and configuration.
+- **Key Huawei Cloud Responsibilities:**
+    - Initializes and manages Huawei Cloud sessions (supports AK/SK authentication and Mock authentication for development).
+    - Validates credentials using IAM ListUsers.
+    - Loads and manages configuration, mutelist, and fixer settings.
+    - Discovers and manages Huawei Cloud regions.
+    - Provides properties and methods for downstream Huawei Cloud service classes to access session, identity, and configuration data.
+
+### Data Models
+
+- **Location:** [`prowler/providers/huaweicloud/models.py`](https://github.com/prowler-cloud/prowler/blob/master/prowler/providers/huaweicloud/models.py)
+- **Purpose:** Define structured data for Huawei Cloud identity, session, credentials, and region info.
+- **Key Huawei Cloud Models:**
+    - `HuaweiCloudCallerIdentity`: Stores caller identity information including account_id and user_id.
+    - `HuaweiCloudCredentials`: Stores credentials (access_key_id, secret_access_key).
+    - `HuaweiCloudSession`: Manages the session and provides methods to create service clients using the official Huawei Cloud SDK.
+
+### `HuaweiCloudService` (Service Base Class)
+
+- **Location:** [`prowler/providers/huaweicloud/lib/service/service.py`](https://github.com/prowler-cloud/prowler/blob/master/prowler/providers/huaweicloud/lib/service/service.py)
+- **Purpose:** Abstract base class that all Huawei Cloud service-specific classes inherit from. This implements the generic service pattern (described in [service page](/developer-guide/services#service-base-class)) specifically for Huawei Cloud.
+- **Key Huawei Cloud Responsibilities:**
+    - Receives a `HuaweicloudProvider` instance to access session, identity, and configuration.
+    - Manages regional clients for services that are region-specific.
+    - Provides `__threading_call__` method to make API calls in parallel by region or resource.
+    - Exposes common audit context (`audited_account`, `audited_account_name`, `audit_resources`, `audit_config`) to subclasses.
+
+### Exception Handling
+
+- **Location:** [`prowler/providers/huaweicloud/exceptions/exceptions.py`](https://github.com/prowler-cloud/prowler/blob/master/prowler/providers/huaweicloud/exceptions/exceptions.py)
+- **Purpose:** Custom exception classes for Huawei Cloud-specific error handling.
+- **Key Huawei Cloud Exceptions:**
+    - `HuaweiCloudClientError`: General client errors
+    - `HuaweiCloudNoCredentialsError`: No credentials found
+    - `HuaweiCloudInvalidCredentialsError`: Invalid credentials provided
+    - `HuaweiCloudSetUpSessionError`: Session setup failures
+    - `HuaweiCloudInvalidRegionError`: Invalid region specified
+
+### Session and Utility Helpers
+
+- **Location:** [`prowler/providers/huaweicloud/lib/`](https://github.com/prowler-cloud/prowler/tree/master/prowler/providers/huaweicloud/lib/)
+- **Purpose:** Helpers for argument parsing, mutelist management, and other cross-cutting concerns.
+
+## Specific Patterns in Huawei Cloud Services
+
+The generic service pattern is described in [service page](/developer-guide/services#service-structure-and-initialisation). You can find all the currently implemented services in the following locations:
+
+- Directly in the code, in location [`prowler/providers/huaweicloud/services/`](https://github.com/prowler-cloud/prowler/tree/master/prowler/providers/huaweicloud/services)
+- In the [Prowler Hub](https://hub.prowler.com/) for a more human-readable view.
+
+The best reference to understand how to implement a new service is following the [service implementation documentation](/developer-guide/services#adding-a-new-service) and taking other services already implemented as reference. In next subsection you can find a list of common patterns that are used across all Huawei Cloud services.
+
+### Huawei Cloud Service Common Patterns
+
+- Services communicate with Huawei Cloud using the official Huawei Cloud Python SDKs (`huaweicloudsdkcore`, `huaweicloudsdkiam`, `huaweicloudsdkecs`, `huaweicloudsdkvpc`, etc.). Documentation for individual services can be found in the [Huawei Cloud SDK documentation](https://support.huaweicloud.com/intl/en-us/sdkreference/sdkreference.html).
+- Every Huawei Cloud service class inherits from `HuaweiCloudService`, ensuring access to session, identity, configuration, and client utilities.
+- The constructor (`__init__`) always calls `super().__init__` with the service name, provider, and optionally `global_service=True` for services that are not regional (e.g., IAM).
+- Resource containers **must** be initialized in the constructor. For regional services, resources are typically stored in dictionaries keyed by region and resource ID.
+- All Huawei Cloud resources are represented as Pydantic `BaseModel` classes, providing type safety and structured access to resource attributes.
+- Huawei Cloud SDK functions are wrapped in try/except blocks, with specific handling for errors, always logging errors.
+- Regional services use `self.regional_clients` to maintain clients for each audited region.
+- The `__threading_call__` method is used for parallel execution across regions or resources.
+
+### Example Service Implementation
+
+```python
+from prowler.lib.logger import logger
+from prowler.providers.huaweicloud.lib.service.service import HuaweiCloudService
+
+
+class MyService(HuaweiCloudService):
+    def __init__(self, provider):
+        # Initialize parent class with service name
+        super().__init__("myservice", provider)
+
+        # Initialize resource containers
+        self.resources = {}
+
+        # Discover resources using threading
+        self.__threading_call__(self._list_resources)
+
+    def _list_resources(self, regional_client):
+        try:
+            region = regional_client.region
+            response = regional_client.list_resources()
+
+            for resource in response.resources:
+                self.resources[resource.id] = MyResource(
+                    id=resource.id,
+                    name=resource.name,
+                    region=region,
+                    # ... other attributes
+                )
+        except Exception as error:
+            logger.error(
+                f"{error.__class__.__name__}[{error.__traceback__.tb_lineno}]: {error}"
+            )
+```
+
+## Specific Patterns in Huawei Cloud Checks
+
+The Huawei Cloud checks pattern is described in [checks page](/developer-guide/checks). You can find all the currently implemented checks:
+
+- Directly in the code, within each service folder, each check has its own folder named after the name of the check. (e.g. [`prowler/providers/huaweicloud/services/iam/iam_account_password_policy/`](https://github.com/prowler-cloud/prowler/tree/master/prowler/providers/huaweicloud/services/iam/iam_account_password_policy))
+- In the [Prowler Hub](https://hub.prowler.com/) for a more human-readable view.
+
+The best reference to understand how to implement a new check is following the [check implementation documentation](/developer-guide/checks#creating-a-check) and taking other similar checks as reference.
+
+### Check Report Class
+
+The `CheckReportHuaweiCloud` class models a single finding for a Huawei Cloud resource in a check report. It is defined in [`prowler/lib/check/models.py`](https://github.com/prowler-cloud/prowler/blob/master/prowler/lib/check/models.py) and inherits from the generic `Check_Report` base class.
+
+#### Purpose
+
+`CheckReportHuaweiCloud` extends the base report structure with Huawei Cloud-specific fields, enabling detailed tracking of the resource, resource ID, ARN, and region associated with each finding.
+
+#### Constructor and Attribute Population
+
+When you instantiate `CheckReportHuaweiCloud`, you must provide the check metadata and a resource object. The class will attempt to automatically populate its Huawei Cloud-specific attributes from the resource, using the following logic:
+
+- **`resource_id`**:
+    - Uses `resource.id` if present.
+    - Otherwise, uses `resource.name` if present.
+    - Defaults to an empty string if not available.
+
+- **`resource_arn`**:
+    - Uses `resource.arn` if present.
+    - Defaults to an empty string if not available.
+
+- **`region`**:
+    - Uses `resource.region` if present.
+    - Defaults to an empty string if not available.
+
+If the resource object does not contain the required attributes, you must set them manually in the check logic.
+
+Other attributes are inherited from the `Check_Report` class, from which you **always** have to set the `status` and `status_extended` attributes in the check logic.
+
+#### Example Usage
+
+```python
+from prowler.lib.check.models import Check, CheckReportHuaweiCloud
+from prowler.providers.huaweicloud.services.myservice.myservice_client import myservice_client
+
+
+class myservice_example_check(Check):
+    def execute(self) -> list[CheckReportHuaweiCloud]:
+        findings = []
+
+        for resource in myservice_client.resources.values():
+            report = CheckReportHuaweiCloud(
+                metadata=self.metadata(),
+                resource=resource
+            )
+            report.region = resource.region
+            report.resource_id = resource.id
+            report.resource_arn = f"huaweicloud:myservice::{myservice_client.audited_account}:resource/{resource.id}"
+
+            if resource.is_compliant:
+                report.status = "PASS"
+                report.status_extended = f"Resource {resource.name} is compliant."
+            else:
+                report.status = "FAIL"
+                report.status_extended = f"Resource {resource.name} is not compliant."
+
+            findings.append(report)
+
+        return findings
+```
+
+## Authentication Methods
+
+The Huawei Cloud provider supports the following authentication methods, prioritized in this order:
+
+1. **Environment Variables** - Credentials provided via `HUAWEICLOUD_ACCESS_KEY_ID` and `HUAWEICLOUD_SECRET_ACCESS_KEY` (or `HW_*` prefix)
+2. **CLI Arguments** - Credentials provided via `--access-key-id` and `--secret-access-key`
+3. **Mock Authentication** - Static test data for development (`HUAWEICLOUD_MOCK_AUTH=true`)
+
+For detailed authentication configuration, see the [Authentication documentation](/user-guide/providers/huaweicloud/authentication).
+
+## Regions
+
+Huawei Cloud has multiple regions across the globe, including regions in China, Asia Pacific, Europe, Middle East, Africa, and South America. By default, Prowler audits all available regions. You can specify specific regions using the `--region` CLI argument:
+
+```bash
+prowler huaweicloud --region cn-north-4 cn-east-3
+```
+
+The list of supported regions is maintained in [`prowler/providers/huaweicloud/config.py`](https://github.com/prowler-cloud/prowler/blob/master/prowler/providers/huaweicloud/config.py).

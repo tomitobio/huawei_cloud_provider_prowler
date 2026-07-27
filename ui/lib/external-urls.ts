@@ -107,6 +107,11 @@ export const getProviderHelpText = (provider: string) => {
         text: "Need help connecting your Okta organization?",
         link: "https://goto.prowler.com/provider-okta",
       };
+    case "huaweicloud":
+      return {
+        text: "Need help connecting your Huawei Cloud account?",
+        link: "https://goto.prowler.com/provider-huaweicloud",
+      };
     default:
       return {
         text: "How to setup a provider?",

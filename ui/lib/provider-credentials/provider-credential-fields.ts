@@ -95,6 +95,13 @@ export const ProviderCredentialFields = {
   // Okta fields
   OKTA_CLIENT_ID: "okta_client_id",
   OKTA_PRIVATE_KEY: "okta_private_key",
+
+  // Huawei Cloud fields
+  HUAWEICLOUD_ACCESS_KEY_ID: "huaweicloud_access_key_id",
+  HUAWEICLOUD_SECRET_ACCESS_KEY: "huaweicloud_secret_access_key",
+  HUAWEICLOUD_REGION: "huaweicloud_region",
+  HUAWEICLOUD_PROJECT_ID: "huaweicloud_project_id",
+  HUAWEICLOUD_DOMAIN_ID: "huaweicloud_domain_id",
 } as const;
 
 // Type for credential field values
@@ -156,6 +163,11 @@ export const ErrorPointers = {
   VERCEL_API_TOKEN: "/data/attributes/secret/api_token",
   OKTA_CLIENT_ID: "/data/attributes/secret/okta_client_id",
   OKTA_PRIVATE_KEY: "/data/attributes/secret/okta_private_key",
+  HUAWEICLOUD_ACCESS_KEY_ID: "/data/attributes/secret/huaweicloud_access_key_id",
+  HUAWEICLOUD_SECRET_ACCESS_KEY: "/data/attributes/secret/huaweicloud_secret_access_key",
+  HUAWEICLOUD_REGION: "/data/attributes/secret/huaweicloud_region",
+  HUAWEICLOUD_PROJECT_ID: "/data/attributes/secret/huaweicloud_project_id",
+  HUAWEICLOUD_DOMAIN_ID: "/data/attributes/secret/huaweicloud_domain_id",
 } as const;
 
 export type ErrorPointer = (typeof ErrorPointers)[keyof typeof ErrorPointers];

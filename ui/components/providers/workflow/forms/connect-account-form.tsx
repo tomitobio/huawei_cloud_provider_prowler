@@ -126,6 +126,11 @@ const getProviderFieldDetails = (providerType?: ProviderType) => {
         label: "Org Domain",
         placeholder: "e.g. your-org.okta.com",
       };
+    case "huaweicloud":
+      return {
+        label: "Account ID",
+        placeholder: "e.g. 123456789012",
+      };
     default:
       return {
         label: "Provider UID",
@@ -242,6 +247,20 @@ export const ConnectAccountForm = ({
                 description: errorMessage,
               });
           }
+        });
+        return;
+      } else if (data?.error) {
+        toast({
+          variant: "destructive",
+          title: "Oops! Something went wrong",
+          description: data.error,
+        });
+        return;
+      } else if (!data?.data) {
+        toast({
+          variant: "destructive",
+          title: "Oops! Something went wrong",
+          description: "Unexpected response from server. Please try again.",
         });
         return;
       } else {

@@ -158,6 +158,11 @@ export const addProviderFormSchema = z
             "Org Domain must be an Okta-managed domain (e.g. acme.okta.com), without scheme or path",
           ),
       }),
+      z.object({
+        providerType: z.literal("huaweicloud"),
+        [ProviderCredentialFields.PROVIDER_ALIAS]: z.string(),
+        providerUid: z.string().trim().min(1, "Provider ID is required"),
+      }),
     ]),
   );
 
@@ -402,7 +407,20 @@ export const addCredentialsFormSchema = (
                                                 "Private Key is required",
                                               ),
                                         }
-                                      : {}),
+                                      : providerType === "huaweicloud"
+                                        ? {
+                                            [ProviderCredentialFields.HUAWEICLOUD_ACCESS_KEY_ID]:
+                                              z.string().min(1, "Access Key ID is required"),
+                                            [ProviderCredentialFields.HUAWEICLOUD_SECRET_ACCESS_KEY]:
+                                              z.string().min(1, "Secret Access Key is required"),
+                                            [ProviderCredentialFields.HUAWEICLOUD_REGION]:
+                                              z.string().optional(),
+                                            [ProviderCredentialFields.HUAWEICLOUD_PROJECT_ID]:
+                                              z.string().optional(),
+                                            [ProviderCredentialFields.HUAWEICLOUD_DOMAIN_ID]:
+                                              z.string().optional(),
+                                          }
+                                        : {}),
     })
     .superRefine((data: Record<string, string | undefined>, ctx) => {
       if (providerType === "m365") {

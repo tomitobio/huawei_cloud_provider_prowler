@@ -89,7 +89,7 @@ WORKDIR /home/prowler
 # Ensure output directory exists
 RUN mkdir -p /tmp/prowler_api_output
 
-COPY --chown=prowler:prowler pyproject.toml uv.lock ./
+COPY --chown=prowler:prowler api/pyproject.toml api/uv.lock ./
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir uv==0.11.14
@@ -102,8 +102,16 @@ RUN uv sync --locked --no-install-project && \
 
 RUN .venv/bin/python .venv/lib/python3.12/site-packages/prowler/providers/m365/lib/powershell/m365_powershell.py
 
-COPY --chown=prowler:prowler src/backend/ ./backend/
-COPY --chown=prowler:prowler docker-entrypoint.sh ./docker-entrypoint.sh
+COPY --chown=prowler:prowler prowler/providers/huaweicloud/ .venv/lib/python3.12/site-packages/prowler/providers/huaweicloud/
+
+COPY --chown=prowler:prowler api/prowler_patches/lib/check/models.py .venv/lib/python3.12/site-packages/prowler/lib/check/models.py
+COPY --chown=prowler:prowler api/prowler_patches/lib/check/check.py .venv/lib/python3.12/site-packages/prowler/lib/check/check.py
+COPY --chown=prowler:prowler api/prowler_patches/lib/outputs/finding.py .venv/lib/python3.12/site-packages/prowler/lib/outputs/finding.py
+COPY --chown=prowler:prowler api/prowler_patches/lib/outputs/outputs.py .venv/lib/python3.12/site-packages/prowler/lib/outputs/outputs.py
+COPY --chown=prowler:prowler api/prowler_patches/providers/common/provider.py .venv/lib/python3.12/site-packages/prowler/providers/common/provider.py
+
+COPY --chown=prowler:prowler api/src/backend/ ./backend/
+COPY --chown=prowler:prowler api/docker-entrypoint.sh ./docker-entrypoint.sh
 
 WORKDIR /home/prowler/backend
 

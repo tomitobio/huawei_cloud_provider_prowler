@@ -261,6 +261,44 @@ const ALIBABACLOUD_COORDINATES: Record<string, { lat: number; lng: number }> = {
   global: { lat: 30.3, lng: 120.2 }, // Global fallback (Hangzhou HQ)
 };
 
+// Huawei Cloud regions
+const HUAWEICLOUD_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  // China regions
+  "cn-north-1": { lat: 39.9, lng: 116.4 }, // Beijing
+  "cn-north-4": { lat: 39.9, lng: 116.4 }, // Beijing 4
+  "cn-east-2": { lat: 31.2, lng: 121.5 }, // Shanghai
+  "cn-east-3": { lat: 31.2, lng: 121.5 }, // Shanghai 3
+  "cn-south-1": { lat: 22.5, lng: 114.1 }, // Guangzhou
+  "cn-south-2": { lat: 22.5, lng: 114.1 }, // Shenzhen
+  "cn-southwest-2": { lat: 30.7, lng: 104.1 }, // Guiyang
+  "cn-northeast-1": { lat: 41.8, lng: 123.4 }, // Dalian
+  "cn-east-5": { lat: 32.1, lng: 118.8 }, // Nanjing
+  "cn-south-4": { lat: 23.1, lng: 113.3 }, // Guangzhou 4
+  "cn-north-9": { lat: 40.8, lng: 111.7 }, // Ulanqab
+  "ap-southeast-1": { lat: -33.9, lng: 151.2 }, // Sydney
+  "ap-southeast-2": { lat: 1.4, lng: 103.8 }, // Singapore
+  "ap-southeast-3": { lat: 3.1, lng: 101.7 }, // Kuala Lumpur
+  "ap-southeast-4": { lat: 13.8, lng: 100.5 }, // Bangkok
+  "ap-southeast-7": { lat: -6.2, lng: 106.8 }, // Jakarta
+  "ap-northeast-1": { lat: 35.7, lng: 139.7 }, // Tokyo
+  "ap-northeast-2": { lat: 37.6, lng: 127.0 }, // Seoul
+  "ap-south-1": { lat: 19.1, lng: 72.9 }, // Mumbai
+  "af-south-1": { lat: -26.2, lng: 28.0 }, // Johannesburg
+  "sa-south-1": { lat: -23.5, lng: -46.6 }, // São Paulo
+  "la-south-2": { lat: -33.4, lng: -70.6 }, // Santiago
+  "la-north-2": { lat: 19.4, lng: -99.1 }, // Mexico City
+  "tr-west-1": { lat: 41.0, lng: 29.0 }, // Istanbul
+  "me-east-1": { lat: 25.3, lng: 55.3 }, // Dubai
+  "eu-west-1": { lat: 51.5, lng: -0.1 }, // London
+  "eu-west-101": { lat: 51.5, lng: -0.1 }, // London 101
+  "eu-central-1": { lat: 50.1, lng: 8.7 }, // Frankfurt
+  "eu-central-101": { lat: 50.1, lng: 8.7 }, // Frankfurt 101
+  "eu-north-1": { lat: 59.3, lng: 18.1 }, // Stockholm
+  "eu-east-101": { lat: 53.9, lng: 27.6 }, // Minsk
+  "na-mexico-1": { lat: 19.4, lng: -99.1 }, // Mexico City
+  global: { lat: 39.9, lng: 116.4 }, // Global fallback (Beijing HQ)
+};
+
 // Okta is a SaaS identity platform without user-facing regions
 const OKTA_COORDINATES: Record<string, { lat: number; lng: number }> = {
   global: { lat: 37.8, lng: -122.4 }, // Global fallback (San Francisco HQ)
@@ -290,6 +328,7 @@ const PROVIDER_COORDINATES: Record<
   oraclecloud: ORACLECLOUD_COORDINATES,
   mongodbatlas: MONGODBATLAS_COORDINATES,
   alibabacloud: ALIBABACLOUD_COORDINATES,
+  huaweicloud: HUAWEICLOUD_COORDINATES,
   okta: OKTA_COORDINATES,
   googleworkspace: GOOGLEWORKSPACE_COORDINATES,
 };

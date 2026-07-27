@@ -297,6 +297,7 @@ class Provider(RowLevelSecurityProtectedModel):
         GOOGLEWORKSPACE = "googleworkspace", _("Google Workspace")
         VERCEL = "vercel", _("Vercel")
         OKTA = "okta", _("Okta")
+        HUAWEICLOUD = "huaweicloud", _("Huawei Cloud")
 
     @staticmethod
     def validate_aws_uid(value):
@@ -439,6 +440,15 @@ class Provider(RowLevelSecurityProtectedModel):
             raise ModelValidationError(
                 detail="Alibaba Cloud account ID must be exactly 16 digits.",
                 code="alibabacloud-uid",
+                pointer="/data/attributes/uid",
+            )
+
+    @staticmethod
+    def validate_huaweicloud_uid(value):
+        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$", value):
+            raise ModelValidationError(
+                detail="Huawei Cloud account ID must be a valid account/domain ID.",
+                code="huaweicloud-uid",
                 pointer="/data/attributes/uid",
             )
 

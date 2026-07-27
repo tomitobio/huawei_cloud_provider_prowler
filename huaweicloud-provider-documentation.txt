@@ -1,0 +1,359 @@
+================================================================================
+HUAWEI CLOUD PROVIDER FOR PROWLER — FULL PROJECT DOCUMENTATION
+================================================================================
+Date: 2026-06-25
+Base Path: /opt/prowler-huaweicloud/prowler/
+Target: Production deployment
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+Goal:
+  Implement a Huawei Cloud provider for Prowler (open-source cloud security
+  auditing tool) following the established provider architecture patterns
+  (primarily modeled after the Alibaba Cloud provider which uses a similar
+  AK/SK authentication model).
+
+Scope:
+  - Provider infrastructure (provider class, models, config, exceptions)
+  - Service implementations (VPC, ECS, IAM done; CTS, ELB, EVS, KMS, OBS,
+    RDS, WAF pending)
+  - Security checks with metadata (4 checks done; more pending)
+  - Mock authentication for development
+  - Web UI integration (Prowler App)
+  - API backend integration (Django ProviderChoices enum)
+  - Documentation (Mintlify .mdx files)
+  - Unit tests
+
+SDK Versions (all 3.1.181):
+  huaweicloudsdkcore, huaweicloudsdkiam, huaweicloudsdkecs, huaweicloudsdkvpc,
+  huaweicloudsdkcts, huaweicloudsdkelb, huaweicloudsdkkms, huaweicloudsdkobs,
+  huaweicloudsdkrds, huaweicloudsdkwaf
+
+================================================================================
+2. ARCHITECTURE DECISIONS
+================================================================================
+
+2.1 Provider Pattern
+  - Follows Alibaba Cloud AK/SK pattern with official Huawei Cloud SDK
+    (huaweicloudsdkcore)
+  - HuaweiCloudSession wraps BasicCredentials from the SDK
+  - generate_regional_clients delegates to session.client(service, region)
+  - Exception codes use range 7000-7999
+
+2.2 Authentication
+  - AK/SK authentication (Access Key ID + Secret Access Key)
+  - Environment variable fallbacks: HUAWEICLOUD_* and HW_* prefixes
+  - Mock authentication via HUAWEICLOUD_MOCK_AUTH env var
+  - Mock returns static test data for Santiago region (la-south-2)
+  - Mock account ID: 123456789012
+  - HuaweiCloud has ONLY static credentials (no role-based auth, no OIDC,
+    no STS temporary credentials) — this simplifies UI patterns significantly
+
+2.3 Service Base Class
+  - HuaweiCloudService: __init__(self, service, provider, global_service=False)
+  - Auto regional_clients generation
+  - __threading_call__ for parallel API calls
+  - Retry logic with configurable timeouts
+
+2.4 Check Pattern
+  - CheckReportHuaweiCloud follows CheckReportAlibabaCloud pattern
+  - Check classes extend Check, execute() returns list[CheckReportHuaweiCloud]
+  - Metadata JSON files follow Alibaba Cloud format
+  - Client pattern: simple 4-line file importing service class and Provider,
+    creating module-level client instance
+
+2.5 Root User Identification
+  - Domain owner's user_id == domain_id in Huawei Cloud
+  - Fixed from flawed name=="root" heuristic
+
+2.6 MFA
+  - Huawei Cloud doesn't distinguish hardware vs virtual MFA in API
+  - list_user_mfa_devices returns virtual MFA devices only
+
+2.7 UI Credential Forms
+  - Follow Alibaba Cloud pattern (AK/SK input fields)
+  - 3 fields: access_key_id (text), secret_access_key (password), region (text)
+  - NO SelectVia component, NO needsSelector entry, NO role schema
+  - credentials-update-info.tsx returns null for huaweicloud
+
+2.8 Branding
+  - Huawei badge uses #CF0A2C brand red
+  - 4-petal logo shape, viewBox 0 0 256 256
+
+================================================================================
+3. COMPLETED WORK (BLOCKS 1-9)
+================================================================================
+
+3.1 Block 1: Provider Infrastructure
+  - Created prowler/providers/huaweicloud/ directory structure
+  - huaweicloud_provider.py: Full HuaweicloudProvider class with mock auth,
+    generate_regional_clients
+  - models.py: HuaweiCloudSession (with is_mock, client()),
+    HuaweiCloudCallerIdentity, HuaweiCloudCredentials
+  - config.py: default region, timeouts, regions dict, global services list
+  - exceptions/exceptions.py: Custom exception classes (codes 7000-7999)
+  - lib/service/service.py: HuaweiCloudService base class
+  - lib/arguments/arguments.py: CLI arguments
+  - lib/mutelist/mutelist.py: Mutelist support
+  - Registered Huawei Cloud in common/provider.py
+  - Added CheckReportHuaweiCloud model in lib/check/models.py
+  - Created __init__.py files for all service directories:
+    iam, ecs, vpc, cts, elb, evs, kms, obs, rds, waf
+
+3.2 Block 2: VPC Service
+  - vpc_service.py: VPC service with _list_vpcs, _list_security_groups
+  - vpc_client.py: Module-level client instance
+  - VPC and SecurityGroup Pydantic models
+
+3.3 Block 3: VPC Check
+  - vpc_default_security_group_restricts_all_traffic check
+  - Metadata JSON file
+
+3.4 Block 4: ECS Service
+  - ecs_service.py: ECS service with Instance model
+  - ecs_client.py: Module-level client instance
+  - _list_servers_details with pagination support
+
+3.5 Block 5: ECS Check
+  - ecs_instance_public_ip check
+  - Metadata JSON file
+
+3.6 Block 6: IAM Service
+  - iam_service.py: IAM service with PasswordPolicy, IAMUser, MFADevice models
+  - iam_client.py: Module-level client instance
+  - Fixed is_domain_owner logic using domain_id comparison
+
+3.7 Block 7: IAM Check — Password Policy
+  - iam_account_password_policy check
+  - Metadata JSON file
+
+3.8 Block 8: IAM Check — Root MFA
+  - iam_root_hardware_mfa_enabled check
+  - Metadata JSON file
+
+3.9 Block 9: API Backend
+  - Added HUAWEICLOUD to ProviderChoices enum in api/src/backend/api/models.py
+
+================================================================================
+4. IN-PROGRESS WORK (BLOCK 10: UI INTEGRATION)
+================================================================================
+
+4.1 Completed UI Registrations
+  - ui/types/providers.ts: "huaweicloud" in PROVIDER_TYPES,
+    "Huawei Cloud" in PROVIDER_DISPLAY_NAMES
+  - ui/components/icons/providers-badge/huaweicloud-provider-badge.tsx: NEW SVG
+  - ui/components/icons/providers-badge/index.ts: import/export/PROVIDER_BADGE_BY_NAME
+  - ui/components/icons/providers-badge/provider-type-icon.tsx: lazy load + map entry
+  - ui/components/ui/entities/get-provider-logo.tsx: import + both switch cases
+  - ui/components/providers/radio-group-provider.tsx: import + PROVIDERS entry
+  - ui/lib/external-urls.ts: help text + docs link
+  - ui/lib/provider-credentials/provider-credential-fields.ts: 3 fields + API paths
+  - ui/types/formSchemas.ts: discriminated union + credentials schema
+  - ui/components/providers/wizard/provider-wizard-modal.utils.ts: destinationLabelMap
+  - ui/actions/overview/regions/threat-map.adapter.ts: HUAWEICLOUD_COORDINATES
+    (30+ regions across China, APAC, EMEA, Americas; fallback Beijing 39.9, 116.4)
+  - ui/lib/provider-credentials/build-credentials.ts: buildHuaweiCloudSecret
+  - ui/types/components.ts: HuaweiCloudCredentials type added
+
+4.2 Remaining UI Edits (7 files + 1 new directory)
+  1. types/components.ts: Add | HuaweiCloudCredentials to CredentialsFormSchema
+     union (lines 389-407, currently ends with | OktaCredentials)
+  2. hooks/use-credentials-form.ts: Add huaweicloud case in getDefaultValues()
+     and getFormSchema() (static only, no role)
+  3. base-credentials-form.tsx: Add huaweicloud conditional rendering for
+     HuaweiCloudStaticCredentialsForm (import + render block)
+  4. connect-account-form.tsx: Add huaweicloud case in getProviderFieldDetails
+     (AK/SK/Region fields)
+  5. custom-provider-inputs.tsx: Add HuaweiCloudProviderBadge import +
+     CustomProviderInputHuaweiCloud component
+  6. node-visuals.ts: Add huaweicloudaccount entry in KNOWN_NODE_VISUALS with
+     HuaweiCloudProviderBadge + NODE_CATEGORY.ACCOUNT
+  7. resource-detail-drawer-content.tsx: Add huaweicloud case in
+     resolveNativeIacConfig (optional, default fallback acceptable)
+  8. Create select-credentials-type/huaweicloud/ directory with form components
+     (static credentials form only, index files — no radio-group or select-via)
+  9. Validate all UI changes compile/typecheck
+
+================================================================================
+5. DOCUMENTATION PLAN (NOT YET STARTED)
+================================================================================
+
+5.1 Documentation Framework
+  - Prowler docs built with Mintlify (.mdx files)
+  - Config: docs/docs.json (navigation config)
+  - Published at docs.prowler.com
+  - Local dev: mint dev (port 3000)
+
+5.2 Files to Create
+  A. docs/user-guide/providers/huaweicloud/getting-started-huaweicloud.mdx
+     - Prerequisites (Huawei Cloud account, AK/SK credentials)
+     - Prowler Cloud onboarding steps
+     - Prowler CLI usage (env vars, --region, --checks, --compliance)
+     - Based on alibabacloud getting-started pattern
+
+  B. docs/user-guide/providers/huaweicloud/authentication.mdx
+     - AK/SK authentication (primary method)
+     - Environment variables (HUAWEICLOUD_ACCESS_KEY_ID,
+       HUAWEICLOUD_SECRET_ACCESS_KEY, HUAWEICLOUD_REGION)
+     - HW_* prefix compatibility
+     - Permissions guidance (IAM ReadOnly, ECS ReadOnly, VPC ReadOnly, etc.)
+     - Based on alibabacloud authentication pattern (simplified — no RAM Role,
+       no OIDC, no STS, no ECS RAM Role, no Credentials URI)
+
+  C. docs/developer-guide/huaweicloud-details.mdx
+     - Main Class (HuaweicloudProvider) with GitHub links
+     - Data Models (HuaweiCloudSession, HuaweiCloudCallerIdentity,
+       HuaweiCloudCredentials)
+     - HuaweiCloudService base class
+     - Exception Handling
+     - Service Common Patterns
+     - Example Service Implementation
+     - Check Report Class (CheckReportHuaweiCloud)
+     - Authentication Methods (AK/SK only, mock auth)
+     - Regions
+     - Based on alibabacloud-details.mdx pattern
+
+5.3 Files to Update
+  D. docs/docs.json: Add navigation entries
+     - User guide: "user-guide/providers/huaweicloud/getting-started-huaweicloud"
+     - User guide: "user-guide/providers/huaweicloud/authentication"
+     - Developer guide: "developer-guide/huaweicloud-details"
+
+  E. docs/developer-guide/security-compliance-framework.mdx:
+     Add "huaweicloud" to valid provider keys list (line 75)
+
+  F. docs/introduction.mdx:
+     Add Huawei Cloud to the provider support table
+
+5.4 Documentation Structure (Reference)
+  docs/
+    docs.json                          -- Mintlify nav config
+    introduction.mdx                   -- Provider support table
+    user-guide/providers/<provider>/
+      getting-started-<provider>.mdx   -- Installation, auth, basic usage
+      authentication.mdx              -- Auth methods
+    developer-guide/
+      provider.mdx                     -- Master "Create a Provider" guide
+      services.mdx                     -- How to add a service
+      checks.mdx                       -- How to write checks
+      check-metadata-guidelines.mdx    -- Metadata JSON field rules
+      documentation.mdx                -- How to write docs
+      security-compliance-framework.mdx -- Valid provider keys list
+      <provider>-details.mdx           -- Provider-specific developer notes
+
+================================================================================
+6. REMAINING SERVICES (NOT YET STARTED)
+================================================================================
+
+  Services with directory + __init__.py created but no implementation:
+  - CTS (Cloud Trace Service)
+  - ELB (Elastic Load Balance)
+  - EVS (Elastic Volume Service)
+  - KMS (Key Management Service)
+  - OBS (Object Storage Service)
+  - RDS (Relational Database Service)
+  - WAF (Web Application Firewall)
+
+  Each needs:
+  - <service>_service.py with Pydantic models and API calls
+  - <service>_client.py module-level client
+  - Check implementations with metadata JSON files
+
+================================================================================
+7. TESTING (NOT YET STARTED)
+================================================================================
+
+  - Unit tests for all services and checks
+  - Mock authentication test coverage
+  - Test pattern follows existing Prowler test structure
+
+================================================================================
+8. KEY FILE LOCATIONS
+================================================================================
+
+PROVIDER CODE:
+  prowler/providers/huaweicloud/
+    huaweicloud_provider.py
+    models.py
+    config.py
+    exceptions/exceptions.py
+    lib/service/service.py
+    lib/arguments/arguments.py
+    lib/mutelist/mutelist.py
+    services/
+      vpc/vpc_service.py, vpc_client.py
+      vpc/vpc_default_security_group_restricts_all_traffic/
+      ecs/ecs_service.py, ecs_client.py
+      ecs/ecs_instance_public_ip/
+      iam/iam_service.py, iam_client.py
+      iam/iam_account_password_policy/
+      iam/iam_root_hardware_mfa_enabled/
+
+API BACKEND:
+  api/src/backend/api/models.py (ProviderChoices enum)
+
+UI (completed):
+  ui/types/providers.ts
+  ui/types/formSchemas.ts
+  ui/types/components.ts (HuaweiCloudCredentials type only)
+  ui/components/icons/providers-badge/huaweicloud-provider-badge.tsx
+  ui/components/icons/providers-badge/index.ts
+  ui/components/icons/providers-badge/provider-type-icon.tsx
+  ui/components/ui/entities/get-provider-logo.tsx
+  ui/components/providers/radio-group-provider.tsx
+  ui/components/providers/wizard/provider-wizard-modal.utils.ts
+  ui/lib/external-urls.ts
+  ui/lib/provider-credentials/provider-credential-fields.ts
+  ui/lib/provider-credentials/build-credentials.ts
+  ui/actions/overview/regions/threat-map.adapter.ts
+
+UI (pending edits):
+  ui/types/components.ts (CredentialsFormSchema union)
+  ui/hooks/use-credentials-form.ts
+  ui/components/providers/workflow/forms/base-credentials-form.tsx
+  ui/components/providers/workflow/forms/connect-account-form.tsx
+  ui/components/filters/custom-provider-inputs.tsx
+  ui/app/(prowler)/attack-paths/(workflow)/query-builder/_lib/node-visuals.ts
+  ui/components/findings/table/resource-detail-drawer/resource-detail-drawer-content.tsx
+  ui/components/providers/workflow/forms/select-credentials-type/huaweicloud/ (NEW)
+
+DOCUMENTATION (to create):
+  docs/user-guide/providers/huaweicloud/getting-started-huaweicloud.mdx
+  docs/user-guide/providers/huaweicloud/authentication.mdx
+  docs/developer-guide/huaweicloud-details.mdx
+
+DOCUMENTATION (to update):
+  docs/docs.json
+  docs/introduction.mdx
+  docs/developer-guide/security-compliance-framework.mdx
+
+================================================================================
+9. ENVIRONMENT VARIABLES
+================================================================================
+
+  HUAWEICLOUD_ACCESS_KEY_ID     — Access Key ID
+  HUAWEICLOUD_SECRET_ACCESS_KEY — Secret Access Key
+  HUAWEICLOUD_REGION            — Default region (e.g., cn-north-4, la-south-2)
+  HUAWEICLOUD_MOCK_AUTH         — Enable mock authentication (any value)
+  HW_ACCESS_KEY_ID             — Alternative AK prefix
+  HW_SECRET_ACCESS_KEY         — Alternative SK prefix
+  HW_REGION                    — Alternative region prefix
+
+================================================================================
+10. SUPPORTED REGIONS (CONFIG.PY)
+================================================================================
+
+  China: cn-north-1, cn-north-4, cn-east-2, cn-east-3, cn-south-1, cn-south-2,
+         cn-southwest-2, cn-north-9
+  APAC:  ap-southeast-1, ap-southeast-2, ap-southeast-3, ap-southeast-4,
+         ap-northeast-1, ap-southeast-7
+  EMEA:  eu-west-1, eu-west-101, eu-central-1, eu-north-1, af-south-1,
+         ru-northwest-1
+  Americas: la-south-2, sa-east-1, na-mexico-1, us-east-1, us-west-1,
+            ca-east-1
+
+================================================================================
+END OF DOCUMENT
+================================================================================

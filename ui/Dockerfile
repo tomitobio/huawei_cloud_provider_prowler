@@ -48,7 +48,9 @@ WORKDIR /app
 # Set up environment for development
 ENV NODE_ENV=development
 ENV NEXT_TELEMETRY_DISABLED=1
-COPY --from=builder /app /app
+ENV NODE_OPTIONS=--max-old-space-size=4096
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 
 # Run development server with hot-reloading
 CMD ["pnpm", "run", "dev"]

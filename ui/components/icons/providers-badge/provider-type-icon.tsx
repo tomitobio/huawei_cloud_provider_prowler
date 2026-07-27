@@ -99,6 +99,11 @@ const OktaProviderBadge = lazy(() =>
     default: m.OktaProviderBadge,
   })),
 );
+const HuaweiCloudProviderBadge = lazy(() =>
+  import("@/components/icons/providers-badge").then((m) => ({
+    default: m.HuaweiCloudProviderBadge,
+  })),
+);
 
 /**
  * Single source of truth mapping each provider type to its human-readable
@@ -131,6 +136,7 @@ export const PROVIDER_TYPE_DATA: Record<
   openstack: { label: "OpenStack", icon: OpenStackProviderBadge },
   vercel: { label: "Vercel", icon: VercelProviderBadge },
   okta: { label: "Okta", icon: OktaProviderBadge },
+  huaweicloud: { label: "Huawei Cloud", icon: HuaweiCloudProviderBadge },
 };
 
 interface ProviderTypeIconProps {

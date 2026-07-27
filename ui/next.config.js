@@ -24,6 +24,7 @@ const cspHeader = `
 
 const nextConfig = {
   poweredByHeader: false,
+  allowedDevOrigins: ["101.44.3.222", "http://101.44.3.222:3000"],
   // Use standalone only in production deployments, not for CI/testing
   ...(process.env.NODE_ENV === "production" &&
     !process.env.CI && {

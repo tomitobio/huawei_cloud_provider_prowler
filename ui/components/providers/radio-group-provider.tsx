@@ -24,6 +24,7 @@ import {
   OktaProviderBadge,
   OpenStackProviderBadge,
   OracleCloudProviderBadge,
+  HuaweiCloudProviderBadge,
   VercelProviderBadge,
 } from "../icons/providers-badge";
 import { FormMessage } from "../ui/form";
@@ -108,6 +109,11 @@ const PROVIDERS = [
     value: "okta",
     label: "Okta",
     badge: OktaProviderBadge,
+  },
+  {
+    value: "huaweicloud",
+    label: "Huawei Cloud",
+    badge: HuaweiCloudProviderBadge,
   },
 ] as const;
 

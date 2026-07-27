@@ -34,6 +34,7 @@ import {
   OpenStackCredentials,
   ProviderType,
   VercelCredentials,
+  HuaweiCloudCredentials,
 } from "@/types";
 
 import { ProviderTitleDocs } from "../provider-title-docs";
@@ -60,6 +61,7 @@ import { IacCredentialsForm } from "./via-credentials/iac-credentials-form";
 import { ImageCredentialsForm } from "./via-credentials/image-credentials-form";
 import { KubernetesCredentialsForm } from "./via-credentials/k8s-credentials-form";
 import { MongoDBAtlasCredentialsForm } from "./via-credentials/mongodbatlas-credentials-form";
+import { HuaweiCloudStaticCredentialsForm } from "./select-credentials-type/huaweicloud/credentials-type";
 import { OktaCredentialsForm } from "./via-credentials/okta-credentials-form";
 import { OpenStackCredentialsForm } from "./via-credentials/openstack-credentials-form";
 import { OracleCloudCredentialsForm } from "./via-credentials/oraclecloud-credentials-form";
@@ -284,6 +286,13 @@ export const BaseCredentialsForm = ({
         {providerType === "okta" && (
           <OktaCredentialsForm
             control={form.control as unknown as Control<OktaCredentials>}
+          />
+        )}
+        {providerType === "huaweicloud" && (
+          <HuaweiCloudStaticCredentialsForm
+            control={
+              form.control as unknown as Control<HuaweiCloudCredentials>
+            }
           />
         )}
 

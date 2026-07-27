@@ -37,6 +37,7 @@ import {
   OpenStackProviderBadge,
   OracleCloudProviderBadge,
   VercelProviderBadge,
+  HuaweiCloudProviderBadge,
 } from "@/components/icons/providers-badge";
 import {
   AmazonEC2Icon,
@@ -180,6 +181,11 @@ const KNOWN_NODE_VISUALS = {
     category: NODE_CATEGORY.ACCOUNT,
     description: "Okta Account",
     Icon: OktaProviderBadge,
+  },
+  huaweicloudaccount: {
+    category: NODE_CATEGORY.ACCOUNT,
+    description: "Huawei Cloud Account",
+    Icon: HuaweiCloudProviderBadge,
   },
   s3bucket: {
     category: NODE_CATEGORY.STORAGE,

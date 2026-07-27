@@ -1579,6 +1579,8 @@ class BaseWriteProviderSecretSerializer(BaseWriteSerializer):
                 serializer = ImageProviderSecret(data=secret)
             elif provider_type == Provider.ProviderChoices.VERCEL.value:
                 serializer = VercelProviderSecret(data=secret)
+            elif provider_type == Provider.ProviderChoices.HUAWEICLOUD.value:
+                serializer = HuaweiCloudProviderSecret(data=secret)
             else:
                 raise serializers.ValidationError(
                     {"provider": f"Provider type not supported {provider_type}"}
@@ -1805,6 +1807,17 @@ class AlibabaCloudProviderSecret(serializers.Serializer):
     access_key_id = serializers.CharField()
     access_key_secret = serializers.CharField()
     security_token = serializers.CharField(required=False)
+
+    class Meta:
+        resource_name = "provider-secrets"
+
+
+class HuaweiCloudProviderSecret(serializers.Serializer):
+    huaweicloud_access_key_id = serializers.CharField()
+    huaweicloud_secret_access_key = serializers.CharField()
+    huaweicloud_region = serializers.CharField(required=False)
+    huaweicloud_project_id = serializers.CharField(required=False)
+    huaweicloud_domain_id = serializers.CharField(required=False)
 
     class Meta:
         resource_name = "provider-secrets"

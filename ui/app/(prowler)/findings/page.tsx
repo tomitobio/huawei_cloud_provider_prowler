@@ -108,6 +108,7 @@ export default async function Findings({
             uniqueGroups={uniqueGroups}
             trailingControls={
               <SeedFromFindingsButton
+                key="seed-from-findings"
                 filterBag={filters}
                 providers={providersData?.data || []}
                 scans={scanDetails}

@@ -340,6 +340,15 @@ export type AlibabaCloudCredentialsRole = {
   [ProviderCredentialFields.PROVIDER_ID]: string;
 };
 
+export type HuaweiCloudCredentials = {
+  [ProviderCredentialFields.HUAWEICLOUD_ACCESS_KEY_ID]: string;
+  [ProviderCredentialFields.HUAWEICLOUD_SECRET_ACCESS_KEY]: string;
+  [ProviderCredentialFields.HUAWEICLOUD_REGION]: string;
+  [ProviderCredentialFields.HUAWEICLOUD_PROJECT_ID]?: string;
+  [ProviderCredentialFields.HUAWEICLOUD_DOMAIN_ID]?: string;
+  [ProviderCredentialFields.PROVIDER_ID]: string;
+};
+
 export type CloudflareTokenCredentials = {
   [ProviderCredentialFields.CLOUDFLARE_API_TOKEN]: string;
   [ProviderCredentialFields.PROVIDER_ID]: string;
@@ -397,7 +406,8 @@ export type CredentialsFormSchema =
   | OpenStackCredentials
   | GoogleWorkspaceCredentials
   | VercelCredentials
-  | OktaCredentials;
+  | OktaCredentials
+  | HuaweiCloudCredentials;
 
 export interface SearchParamsProps {
   [key: string]: string | string[] | undefined;

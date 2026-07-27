@@ -15,6 +15,7 @@ export const PROVIDER_TYPES = [
   "openstack",
   "vercel",
   "okta",
+  "huaweicloud",
 ] as const;
 
 export type ProviderType = (typeof PROVIDER_TYPES)[number];
@@ -36,6 +37,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderType, string> = {
   openstack: "OpenStack",
   vercel: "Vercel",
   okta: "Okta",
+  huaweicloud: "Huawei Cloud",
 };
 
 export function getProviderDisplayName(providerId: string): string {

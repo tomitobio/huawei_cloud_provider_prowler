@@ -42,6 +42,7 @@ export function getProviderWizardDocsDestination(docsLink: string) {
     oraclecloud: "Oracle Cloud",
     mongodbatlas: "MongoDB Atlas",
     alibabacloud: "Alibaba Cloud",
+    huaweicloud: "Huawei Cloud",
     cloudflare: "Cloudflare",
     openstack: "OpenStack",
     help: "Provider",

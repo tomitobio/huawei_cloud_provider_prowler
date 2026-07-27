@@ -64,6 +64,17 @@ dependencies = [
   "sqlparse (==0.5.5)",
   "fonttools (==4.62.1)",
   "uvicorn-worker (==0.4.0)",
+  "huaweicloudsdkcore==3.1.204",
+  "huaweicloudsdkcts==3.1.204",
+  "huaweicloudsdkecs==3.1.204",
+  "huaweicloudsdkelb==3.1.204",
+  "huaweicloudsdkevs==3.1.204",
+  "huaweicloudsdkiam==3.1.204",
+  "huaweicloudsdkkms==3.1.204",
+  "huaweicloudsdkobs==3.1.204",
+  "huaweicloudsdkrds==3.1.204",
+  "huaweicloudsdkvpc==3.1.204",
+  "huaweicloudsdkwaf==3.1.204",
 ]
 description = "Prowler's API (Django/DRF)"
 license = "Apache-2.0"

@@ -12,6 +12,7 @@ import {
   MongoDBAtlasProviderBadge,
   OpenStackProviderBadge,
   OracleCloudProviderBadge,
+  HuaweiCloudProviderBadge,
 } from "../icons/providers-badge";
 
 export const CustomProviderInputAWS = () => {
@@ -127,6 +128,15 @@ export const CustomProviderInputOpenStack = () => {
     <div className="flex items-center gap-x-2">
       <OpenStackProviderBadge width={25} height={25} />
       <p className="text-sm">OpenStack</p>
+    </div>
+  );
+};
+
+export const CustomProviderInputHuaweiCloud = () => {
+  return (
+    <div className="flex items-center gap-x-2">
+      <HuaweiCloudProviderBadge width={25} height={25} />
+      <p className="text-sm">Huawei Cloud</p>
     </div>
   );
 };
