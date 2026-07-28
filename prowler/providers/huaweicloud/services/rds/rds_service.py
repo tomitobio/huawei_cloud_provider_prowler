@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from pydantic.v1 import BaseModel
 
@@ -33,19 +33,19 @@ class RDS(HuaweiCloudService):
                 id="rds-mock-001", name="public-db-with-backup", status="ACTIVE",
                 engine="mysql", engine_version="8.0", public_ip="123.45.67.200",
                 is_public=True, backup_enabled=True, region=region,
-                disk_encryption_id="kms-mock-001",
+                enable_ssl=True, is_multi_az=True, is_ha=True,
             ),
             RDSInstance(
                 id="rds-mock-002", name="private-db-no-backup", status="ACTIVE",
                 engine="postgresql", engine_version="14", public_ip="",
                 is_public=False, backup_enabled=False, region=region,
-                disk_encryption_id="",
+                enable_ssl=False, is_multi_az=False, is_ha=False,
             ),
             RDSInstance(
                 id="rds-mock-003", name="private-db-with-backup", status="ACTIVE",
                 engine="mysql", engine_version="8.0", public_ip="",
                 is_public=False, backup_enabled=True, region=region,
-                disk_encryption_id="kms-mock-002",
+                enable_ssl=True, is_multi_az=False, is_ha=True,
             ),
         ]
 
@@ -80,20 +80,40 @@ class RDS(HuaweiCloudService):
                             if keep_days and keep_days > 0:
                                 backup_enabled = True
 
+                        datastore = getattr(inst_data, "datastore", None)
+                        engine = getattr(datastore, "type", "") if datastore else ""
+                        engine_version = getattr(datastore, "version", "") if datastore else ""
+
+                        enable_ssl = bool(getattr(inst_data, "enable_ssl", False))
+
+                        instance_type = getattr(inst_data, "type", "")
+                        is_ha = bool(instance_type and instance_type.lower() in ("ha", "replica"))
+
+                        is_multi_az = False
+                        nodes = getattr(inst_data, "nodes", None)
+                        if nodes:
+                            azs = set()
+                            for node in nodes:
+                                az = getattr(node, "availability_zone", None)
+                                if az:
+                                    azs.add(az)
+                            is_multi_az = len(azs) > 1
+
                         self.instances.append(
                             RDSInstance(
                                 id=getattr(inst_data, "id", ""),
                                 name=getattr(inst_data, "name", ""),
                                 status=getattr(inst_data, "status", ""),
-                                engine=getattr(inst_data, "datastore", None)
-                                and getattr(inst_data.datastore, "type", ""),
-                                engine_version=getattr(inst_data, "datastore", None)
-                                and getattr(inst_data.datastore, "version", ""),
+                                engine=engine,
+                                engine_version=engine_version,
                                 public_ip=public_ip,
                                 is_public=is_public,
                                 backup_enabled=backup_enabled,
                                 region=region,
                                 disk_encryption_id=getattr(inst_data, "disk_encryption_id", ""),
+                                enable_ssl=enable_ssl,
+                                is_multi_az=is_multi_az,
+                                is_ha=is_ha,
                             )
                         )
 
@@ -116,3 +136,6 @@ class RDSInstance(BaseModel):
     backup_enabled: bool = False
     region: str = ""
     disk_encryption_id: str = ""
+    enable_ssl: bool = False
+    is_multi_az: bool = False
+    is_ha: bool = False

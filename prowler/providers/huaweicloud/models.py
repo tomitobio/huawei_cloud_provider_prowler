@@ -1,7 +1,7 @@
 """Huawei Cloud Provider Models"""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic.v1 import BaseModel
 
@@ -9,8 +9,6 @@ from prowler.lib.logger import logger
 from prowler.providers.common.models import ProviderOutputOptions
 from prowler.providers.huaweicloud.config import (
     HUAWEICLOUD_DEFAULT_REGION,
-    HUAWEICLOUD_SDK_CONNECT_TIMEOUT,
-    HUAWEICLOUD_SDK_READ_TIMEOUT,
 )
 
 
@@ -289,7 +287,177 @@ class HuaweiCloudSession:
                     .with_credentials(self._get_basic_credentials()) \
                     .with_region(EvsRegion.value_of(client_region)) \
                     .build()
-                    
+
+            elif service == "eip":
+                from huaweicloudsdkeip.v2 import EipClient
+                from huaweicloudsdkeip.v2.region.eip_region import EipRegion
+
+                client_region = region or self._region
+                return EipClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(EipRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "nat":
+                from huaweicloudsdknat.v2 import NatClient
+                from huaweicloudsdknat.v2.region.nat_region import NatRegion
+
+                client_region = region or self._region
+                return NatClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(NatRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "vpn":
+                from huaweicloudsdkvpn.v5 import VpnClient
+                from huaweicloudsdkvpn.v5.region.vpn_region import VpnRegion
+
+                client_region = region or self._region
+                return VpnClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(VpnRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "dns":
+                from huaweicloudsdkdns.v2 import DnsClient
+                from huaweicloudsdkdns.v2.region.dns_region import DnsRegion
+
+                client_region = region or self._region
+                return DnsClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(DnsRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "cfw":
+                from huaweicloudsdkcfw.v1 import CfwClient
+                from huaweicloudsdkcfw.v1.region.cfw_region import CfwRegion
+
+                client_region = region or self._region
+                return CfwClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(CfwRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "dcs":
+                from huaweicloudsdkdcs.v2 import DcsClient
+                from huaweicloudsdkdcs.v2.region.dcs_region import DcsRegion
+
+                client_region = region or self._region
+                return DcsClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(DcsRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "cce":
+                from huaweicloudsdkcce.v3 import CceClient
+                from huaweicloudsdkcce.v3.region.cce_region import CceRegion
+
+                client_region = region or self._region
+                return CceClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(CceRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "functiongraph":
+                from huaweicloudsdkfunctiongraph.v2 import FunctionGraphClient
+                from huaweicloudsdkfunctiongraph.v2.region.functiongraph_region import FunctionGraphRegion
+
+                client_region = region or self._region
+                return FunctionGraphClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(FunctionGraphRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "cbr":
+                from huaweicloudsdkcbr.v1 import CbrClient
+                from huaweicloudsdkcbr.v1.region.cbr_region import CbrRegion
+
+                client_region = region or self._region
+                return CbrClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(CbrRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "sfs":
+                from huaweicloudsdksfsturbo.v1 import SFSTurboClient
+                from huaweicloudsdksfsturbo.v1.region.sfsturbo_region import SFSTurboRegion
+
+                client_region = region or self._region
+                return SFSTurboClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(SFSTurboRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "ces":
+                from huaweicloudsdkces.v1 import CesClient
+                from huaweicloudsdkces.v1.region.ces_region import CesRegion
+
+                client_region = region or self._region
+                return CesClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(CesRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "lts":
+                from huaweicloudsdklts.v2 import LtsClient
+                from huaweicloudsdklts.v2.region.lts_region import LtsRegion
+
+                client_region = region or self._region
+                return LtsClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(LtsRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "smn":
+                from huaweicloudsdksmn.v2 import SmnClient
+                from huaweicloudsdksmn.v2.region.smn_region import SmnRegion
+
+                client_region = region or self._region
+                return SmnClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(SmnRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "config":
+                from huaweicloudsdkrms.v1 import RmsClient
+                from huaweicloudsdkrms.v1.region.rms_region import RmsRegion
+
+                client_region = region or self._region
+                return RmsClient.new_builder() \
+                    .with_credentials(self._get_global_credentials()) \
+                    .with_region(RmsRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "bms":
+                from huaweicloudsdkbms.v1 import BmsClient
+                from huaweicloudsdkbms.v1.region.bms_region import BmsRegion
+
+                client_region = region or self._region
+                return BmsClient.new_builder() \
+                    .with_credentials(self._get_basic_credentials()) \
+                    .with_region(BmsRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "tms":
+                from huaweicloudsdktms.v1 import TmsClient
+                from huaweicloudsdktms.v1.region.tms_region import TmsRegion
+
+                client_region = region or self._region
+                return TmsClient.new_builder() \
+                    .with_credentials(self._get_global_credentials()) \
+                    .with_region(TmsRegion.value_of(client_region)) \
+                    .build()
+
+            elif service == "identitycenter":
+                from huaweicloudsdkidentitycenter.v1 import IdentityCenterClient
+                from huaweicloudsdkidentitycenter.v1.region.identitycenter_region import IdentityCenterRegion
+
+                client_region = region or self._region
+                return IdentityCenterClient.new_builder() \
+                    .with_credentials(self._get_global_credentials()) \
+                    .with_region(IdentityCenterRegion.value_of(client_region)) \
+                    .build()
+
             else:
                 logger.warning(f"Huawei Cloud service '{service}' not yet implemented")
                 return None
@@ -320,6 +488,23 @@ class HuaweiCloudSession:
             basic_creds.security_token = creds.security_token
 
         return basic_creds
+
+    def _get_global_credentials(self):
+        """Get Huawei Cloud GlobalCredentials from stored credentials."""
+        from huaweicloudsdkcore.auth.credentials import GlobalCredentials
+
+        creds = self._credentials
+
+        global_creds = GlobalCredentials(
+            ak=creds.ak,
+            sk=creds.sk,
+            domain_id=creds.domain_id,
+        )
+
+        if creds.security_token:
+            global_creds.security_token = creds.security_token
+
+        return global_creds
 
 
 class HuaweiCloudOutputOptions(ProviderOutputOptions):

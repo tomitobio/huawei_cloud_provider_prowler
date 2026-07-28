@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from pydantic.v1 import BaseModel
 
@@ -52,7 +52,7 @@ class EVS(HuaweiCloudService):
             logger.info(f"EVS - Listing Volumes in {region}...")
 
             try:
-                from huaweicloudsdkevs.v3 import ListVolumesRequest
+                from huaweicloudsdkevs.v2 import ListVolumesRequest
 
                 request = ListVolumesRequest()
                 response = self._call_with_retries(

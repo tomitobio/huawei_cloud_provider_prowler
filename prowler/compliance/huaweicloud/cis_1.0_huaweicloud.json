@@ -280,27 +280,6 @@
     },
     {
       "Id": "3.3",
-      "Description": "Ensure security groups do not allow all protocols open to any source",
-      "Checks": [
-        "vpc_security_group_all_protocols_open"
-      ],
-      "Attributes": [
-        {
-          "Section": "3 Network Security",
-          "Profile": "Level 1",
-          "AssessmentStatus": "Automated",
-          "Description": "Ensure security groups do not have rules that allow all protocols (any protocol) from any source (0.0.0.0/0).",
-          "RationaleStatement": "Rules that allow all protocols from any source completely expose the associated resources to all types of network traffic from the internet, creating a severe security risk.",
-          "ImpactStatement": "",
-          "RemediationProcedure": "1. Log on to the Huawei Cloud console. 2. Go to VPC > Security Groups. 3. For each security group, review ingress rules. 4. Remove rules that allow all protocols from 0.0.0.0/0. 5. Add specific protocol and port rules as needed.",
-          "AuditProcedure": "Run prowler to check if any security groups allow all protocols open to any source.",
-          "AdditionalInformation": "",
-          "References": "https://support.huaweicloud.com/intl/en-us/vpc_faq/vpc_faq_0036.html"
-        }
-      ]
-    },
-    {
-      "Id": "3.4",
       "Description": "Ensure WAF is enabled",
       "Checks": [
         "waf_enabled"
@@ -336,69 +315,6 @@
           "ImpactStatement": "",
           "RemediationProcedure": "1. Log on to the Huawei Cloud console. 2. Go to Elastic Cloud Server. 3. For each instance with a public IP, release the EIP if not required. 4. Use a bastion host or VPN for access.",
           "AuditProcedure": "Run prowler to check if any ECS instances have public IP addresses.",
-          "AdditionalInformation": "",
-          "References": "https://support.huaweicloud.com/intl/en-us/usermanual-ecs/ecs_03_0304.html"
-        }
-      ]
-    },
-    {
-      "Id": "4.2",
-      "Description": "Ensure ECS instances have a key pair assigned",
-      "Checks": [
-        "ecs_instance_key_pair"
-      ],
-      "Attributes": [
-        {
-          "Section": "4 Compute",
-          "Profile": "Level 1",
-          "AssessmentStatus": "Automated",
-          "Description": "Ensure all ECS instances have a key pair assigned for secure SSH access.",
-          "RationaleStatement": "Key pairs use public-key cryptography for authentication, which is more secure than password-based authentication. Without a key pair, instances may fall back to weaker authentication methods.",
-          "ImpactStatement": "",
-          "RemediationProcedure": "1. Log on to the Huawei Cloud console. 2. Go to Elastic Cloud Server. 3. For each instance without a key pair, create a key pair and associate it with the instance. 4. Alternatively, recreate the instance with a key pair assigned.",
-          "AuditProcedure": "Run prowler to check if all ECS instances have a key pair assigned.",
-          "AdditionalInformation": "",
-          "References": "https://support.huaweicloud.com/intl/en-us/usermanual-ecs/ecs_03_0304.html"
-        }
-      ]
-    },
-    {
-      "Id": "4.3",
-      "Description": "Ensure ECS instances have security groups attached",
-      "Checks": [
-        "ecs_instance_security_groups_attached"
-      ],
-      "Attributes": [
-        {
-          "Section": "4 Compute",
-          "Profile": "Level 1",
-          "AssessmentStatus": "Automated",
-          "Description": "Ensure all ECS instances have at least one security group attached.",
-          "RationaleStatement": "Security groups control inbound and outbound traffic to ECS instances. Without a security group, instances may have no network-level protection.",
-          "ImpactStatement": "",
-          "RemediationProcedure": "1. Log on to the Huawei Cloud console. 2. Go to Elastic Cloud Server. 3. For each instance without a security group, associate an appropriate security group. 4. Click OK.",
-          "AuditProcedure": "Run prowler to check if all ECS instances have security groups attached.",
-          "AdditionalInformation": "",
-          "References": "https://support.huaweicloud.com/intl/en-us/usermanual-ecs/ecs_03_0304.html"
-        }
-      ]
-    },
-    {
-      "Id": "4.4",
-      "Description": "Ensure ECS instances do not use the default security group",
-      "Checks": [
-        "ecs_instance_no_default_security_group"
-      ],
-      "Attributes": [
-        {
-          "Section": "4 Compute",
-          "Profile": "Level 1",
-          "AssessmentStatus": "Automated",
-          "Description": "Ensure ECS instances are not associated with the default security group.",
-          "RationaleStatement": "The default security group often has overly permissive rules. Using custom security groups with least-privilege rules reduces the attack surface.",
-          "ImpactStatement": "",
-          "RemediationProcedure": "1. Log on to the Huawei Cloud console. 2. Go to Elastic Cloud Server. 3. For each instance using the default security group, create a custom security group with restrictive rules. 4. Replace the default security group with the custom one.",
-          "AuditProcedure": "Run prowler to check if any ECS instances use the default security group.",
           "AdditionalInformation": "",
           "References": "https://support.huaweicloud.com/intl/en-us/usermanual-ecs/ecs_03_0304.html"
         }
@@ -443,27 +359,6 @@
           "AuditProcedure": "Run prowler to check if any RDS instances are publicly accessible.",
           "AdditionalInformation": "",
           "References": "https://support.huaweicloud.com/intl/en-us/usermanual-rds/rds_03_0077.html"
-        }
-      ]
-    },
-    {
-      "Id": "5.3",
-      "Description": "Ensure RDS instances have disk encryption enabled",
-      "Checks": [
-        "rds_instance_disk_encryption"
-      ],
-      "Attributes": [
-        {
-          "Section": "5 Database",
-          "Profile": "Level 1",
-          "AssessmentStatus": "Automated",
-          "Description": "Ensure all RDS instances have disk encryption enabled using KMS.",
-          "RationaleStatement": "Encrypting RDS storage protects data at rest against unauthorized access if the underlying storage media is compromised. It is a critical control for data protection and compliance.",
-          "ImpactStatement": "",
-          "RemediationProcedure": "1. Log on to the Huawei Cloud console. 2. Go to Relational Database Service. 3. For each unencrypted instance, create a new instance with disk encryption enabled using a KMS key. 4. Migrate data to the encrypted instance. 5. Delete the unencrypted instance.",
-          "AuditProcedure": "Run prowler to check if all RDS instances have disk encryption enabled.",
-          "AdditionalInformation": "",
-          "References": "https://support.huaweicloud.com/intl/en-us/usermanual-rds/rds_05_0037.html"
         }
       ]
     },

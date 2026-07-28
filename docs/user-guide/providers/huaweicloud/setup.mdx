@@ -1,0 +1,328 @@
+---
+title: 'Huawei Cloud Setup'
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="5.15.0" />
+
+This guide walks you through setting up Prowler to audit Huawei Cloud from end to end — installing the CLI, creating credentials, running your first scan, and reviewing results. For Prowler Server (App/Cloud) setup, see the [Prowler Server](#prowler-server-app) section below.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+
+- A **Huawei Cloud account** with access to the [IAM console](https://console.huaweicloud.com/iam/)
+- **Python >= 3.10, <= 3.13** installed on your machine
+- Permission to create IAM users and assign policies in your Huawei Cloud account
+
+## Quick Start
+
+If you already have an IAM user with an AK/SK pair and read-only permissions, you can get started in three commands:
+
+```bash
+pipx install prowler
+
+export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
+export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
+export HUAWEICLOUD_PROJECT_ID="your-project-id"
+
+prowler huaweicloud
+```
+
+If not, follow the step-by-step guide below.
+
+## Step-by-Step Setup
+
+### Step 1: Install Prowler CLI
+
+See the [Installation guide](/user-guide/providers/huaweicloud/installation) for all available methods (pipx, pip, Docker, uv, Brew). The recommended method is pipx:
+
+```bash
+pipx install prowler
+prowler -v
+```
+
+Verify the Huawei Cloud provider is available:
+
+```bash
+prowler huaweicloud --list-services
+```
+
+### Step 2: Create an IAM User with Read-Only Permissions
+
+<Warning>
+Do not use the AK/SK pair of your main Huawei Cloud account. Create a dedicated IAM user with read-only permissions.
+</Warning>
+
+1. Open the [IAM console](https://console.huaweicloud.com/iam/) and go to **Users** → **Create User**.
+2. Enter a username (e.g., `prowler-auditor`) and select **Programmatic access**.
+3. In **Credential**, select **Access Key**.
+4. Save the generated **Access Key ID** and **Secret Access Key** immediately — the secret is only shown once.
+5. Attach read-only policies to the user. For a broad scan, attach the following system policies:
+
+| Policy | Services Covered |
+| --- | --- |
+| `IAM ReadOnly` | IAM |
+| `ECS ReadOnly` | ECS |
+| `VPC ReadOnly` | VPC |
+| `CTS ReadOnly` | CTS |
+| `ELB ReadOnly` | ELB |
+| `KMS ReadOnly` | KMS |
+| `OBS ReadOnly` | OBS |
+| `RDS ReadOnly` | RDS |
+| `WAF ReadOnly` | WAF |
+
+For the full list of services and custom policy guidance, see the [Authentication guide](/user-guide/providers/huaweicloud/authentication#permissions-guidance).
+
+### Step 3: Get Your Project ID
+
+Prowler needs a **Project ID** to access regional services. To find it:
+
+1. Log in to the [Huawei Cloud Console](https://console.huaweicloud.com/).
+2. Click your profile avatar in the top-right corner.
+3. Switch to the project you want to scan (e.g., `cn-north-4`).
+4. Copy the **Project ID** from the project details.
+
+<Note>
+The Project ID is region-specific. If you scan multiple regions, you need the Project ID for each region. Set the default region's Project ID via `HUAWEICLOUD_PROJECT_ID` and pass additional ones as needed.
+</Note>
+
+### Step 4: Configure Credentials
+
+Choose one of the following methods:
+
+<Tabs>
+  <Tab title="Environment Variables (Recommended)">
+    ```bash
+    export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
+    export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
+    export HUAWEICLOUD_PROJECT_ID="your-project-id"
+    ```
+
+    Add these to your shell profile (`~/.bashrc`, `~/.zshrc`) for persistence, or use a secrets manager for CI/CD.
+  </Tab>
+  <Tab title="CLI Arguments">
+    ```bash
+    prowler huaweicloud \
+      --access-key-id "your-access-key-id" \
+      --secret-access-key "your-secret-access-key" \
+      --project-id "your-project-id"
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    docker run -ti --rm \
+      -v /your/local/dir/prowler-output:/home/prowler/output \
+      --env HUAWEICLOUD_ACCESS_KEY_ID \
+      --env HUAWEICLOUD_SECRET_ACCESS_KEY \
+      --env HUAWEICLOUD_PROJECT_ID \
+      toniblyx/prowler:latest huaweicloud
+    ```
+  </Tab>
+</Tabs>
+
+### Step 5: Run Your First Scan
+
+Start with a single region and a subset of services to verify everything works:
+
+```bash
+prowler huaweicloud --region cn-north-4 --services iam --verbose
+```
+
+You should see output similar to:
+
+```
+[check] iam_account_password_policy [service] iam [region] cn-north-4
+    PASS: IAM password policy is configured
+[check] iam_user_mfa_enabled [service] iam [region] cn-north-4
+    FAIL: User 'admin' does not have MFA enabled
+...
+```
+
+### Step 6: Run a Full Audit
+
+Once verified, run a comprehensive scan:
+
+```bash
+prowler huaweicloud \
+  --region cn-north-4 \
+  --output-formats json-ocsf html csv \
+  --output-directory ./reports
+```
+
+This generates reports in `./reports/` in three formats:
+
+| File | Format | Use Case |
+| --- | --- | --- |
+| `*.csv` | CSV | Spreadsheet analysis, quick filtering |
+| `*.json-ocsf` | JSON (OCSF) | Programmatic processing, SIEM ingestion |
+| `*.html` | HTML | Human-readable report, sharing with teams |
+
+### Step 7: Review Results
+
+Open the HTML report in a browser:
+
+```bash
+open ./reports/output.html
+```
+
+Key things to look for:
+
+- **FAIL findings** — resources that do not comply with the check's expected state
+- **PASS findings** — resources that comply
+- **MANUAL findings** — checks that require manual review (no automated verdict)
+- **Severity** — `critical`, `high`, `medium`, `low`, `informational`
+
+Filter for only failed findings:
+
+```bash
+prowler huaweicloud --status FAIL --output-formats json-ocsf
+```
+
+## Prowler Server (App)
+
+To scan Huawei Cloud from the Prowler web UI instead of the CLI:
+
+### Step 1: Deploy or Access Prowler App
+
+- **Prowler Cloud** (SaaS): Navigate to [cloud.prowler.com](https://cloud.prowler.com/) and sign up.
+- **Prowler App** (self-hosted): See the [Prowler App documentation](/getting-started/products/prowler-app) for deployment instructions.
+
+### Step 2: Add Huawei Cloud as a Provider
+
+1. Go to **Configuration** → **Providers**.
+2. Click **Add Provider** and select **Huawei Cloud**.
+3. Enter your **Account ID** (Domain ID) — find it in the Huawei Cloud Console under your profile.
+4. Optionally provide a friendly alias.
+
+### Step 3: Provide Credentials
+
+1. Enter the **Access Key ID** and **Secret Access Key** of the IAM user created in [Step 2](#step-2-create-an-iam-user-with-read-only-permissions).
+2. Enter the **Region** to scan (e.g., `cn-north-4`).
+
+<Warning>
+Static access keys are long-lived credentials. For production environments, rotate them regularly and restrict the IAM user's permissions to read-only.
+</Warning>
+
+### Step 4: Launch the Scan
+
+1. Review your configuration.
+2. Click **Launch Scan** to start auditing.
+
+Results appear in the Prowler dashboard once the scan completes.
+
+## CI/CD Integration
+
+Integrate Prowler into your CI pipeline for continuous auditing:
+
+### GitHub Actions
+
+```yaml
+name: Prowler Huawei Cloud Audit
+on:
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly on Monday at 2 AM
+  workflow_dispatch:
+
+jobs:
+  prowler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pipx install prowler
+
+      - name: Run Prowler
+        env:
+          HUAWEICLOUD_ACCESS_KEY_ID: ${{ secrets.HUAWEICLOUD_ACCESS_KEY_ID }}
+          HUAWEICLOUD_SECRET_ACCESS_KEY: ${{ secrets.HUAWEICLOUD_SECRET_ACCESS_KEY }}
+          HUAWEICLOUD_PROJECT_ID: ${{ secrets.HUAWEICLOUD_PROJECT_ID }}
+        run: |
+          prowler huaweicloud \
+            --region cn-north-4 \
+            --output-formats json-ocsf html \
+            --output-directory ./reports \
+            --ignore-exit-code-3 \
+            --no-banner
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prowler-reports
+          path: ./reports/
+```
+
+### GitLab CI
+
+```yaml
+prowler-huaweicloud:
+  image: toniblyx/prowler:latest
+  script:
+    - prowler huaweicloud
+        --region cn-north-4
+        --output-formats json-ocsf html
+        --output-directory ./reports
+        --ignore-exit-code-3
+        --no-banner
+  artifacts:
+    paths:
+      - ./reports/
+  variables:
+    HUAWEICLOUD_ACCESS_KEY_ID: $HUAWEICLOUD_ACCESS_KEY_ID
+    HUAWEICLOUD_SECRET_ACCESS_KEY: $HUAWEICLOUD_SECRET_ACCESS_KEY
+    HUAWEICLOUD_PROJECT_ID: $HUAWEICLOUD_PROJECT_ID
+```
+
+<Note>
+Use `--ignore-exit-code-3` (`-z`) in CI pipelines to prevent the pipeline from failing when Prowler finds security issues. Remove this flag if you want the pipeline to fail on any finding.
+</Note>
+
+## Troubleshooting
+
+### Credentials Not Found
+
+```
+ERROR: No credentials found. Set HUAWEICLOUD_ACCESS_KEY_ID and HUAWEICLOUD_SECRET_ACCESS_KEY.
+```
+
+**Fix**: Ensure environment variables are set. Verify with `echo $HUAWEICLOUD_ACCESS_KEY_ID`.
+
+### Permission Denied for a Service
+
+```
+ERROR: Failed to list ECS servers: Unauthorized
+```
+
+**Fix**: The IAM user lacks read access to the service. Attach the corresponding `ReadOnly` policy (e.g., `ECS ReadOnly`). See the [Authentication guide](/user-guide/providers/huaweicloud/authentication#permissions-guidance) for the full list.
+
+### Invalid Project ID
+
+```
+ERROR: Project ID is required for regional services.
+```
+
+**Fix**: Set `HUAWEICLOUD_PROJECT_ID` or pass `--project-id`. Find it in the Huawei Cloud Console under your project settings.
+
+### Region Not Supported
+
+```
+ERROR: Region 'xx-xxxx-x' is not a valid Huawei Cloud region.
+```
+
+**Fix**: Use a supported region ID. See the [Usage guide](/user-guide/providers/huaweicloud/usage#region-selection) for the full list of 27 supported regions.
+
+### Scan Is Slow
+
+Prowler scans regions sequentially and services in parallel within each region. To speed up scans:
+
+- Limit the number of regions: `--region cn-north-4`
+- Limit the number of services: `--services iam vpc ecs`
+- Exclude slow services: `--excluded-service obs rds`
+
+## Next Steps
+
+- [Usage](/user-guide/providers/huaweicloud/usage) — all CLI commands and options
+- [Authentication](/user-guide/providers/huaweicloud/authentication) — credential methods and permissions
+- [Provider Development](/user-guide/providers/huaweicloud/provider-development) — create custom checks and services

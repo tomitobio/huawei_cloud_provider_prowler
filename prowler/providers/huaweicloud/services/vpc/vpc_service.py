@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic.v1 import BaseModel
 
@@ -131,24 +130,24 @@ class VPC(HuaweiCloudService):
                             for rule_data in sg_data.security_group_rules:
                                 rules.append(
                                     SecurityGroupRule(
-                                        id=rule_data.id,
-                                        direction=getattr(rule_data, "direction", ""),
-                                        protocol=getattr(rule_data, "protocol", ""),
-                                        ethertype=getattr(rule_data, "ethertype", ""),
+                                        id=rule_data.id or "",
+                                        direction=getattr(rule_data, "direction", "") or "",
+                                        protocol=getattr(rule_data, "protocol", "") or "",
+                                        ethertype=getattr(rule_data, "ethertype", "") or "",
                                         port_range_min=getattr(rule_data, "port_range_min", None),
                                         port_range_max=getattr(rule_data, "port_range_max", None),
-                                        remote_ip_prefix=getattr(rule_data, "remote_ip_prefix", ""),
-                                        remote_group_id=getattr(rule_data, "remote_group_id", ""),
-                                        description=getattr(rule_data, "description", ""),
+                                        remote_ip_prefix=getattr(rule_data, "remote_ip_prefix", "") or "",
+                                        remote_group_id=getattr(rule_data, "remote_group_id", None),
+                                        description=getattr(rule_data, "description", "") or "",
                                     )
                                 )
 
                         self.security_groups[sg_id] = SecurityGroups(
                             id=sg_id,
-                            name=getattr(sg_data, "name", sg_id),
+                            name=getattr(sg_data, "name", None) or sg_id,
                             region=region,
-                            vpc_id=getattr(sg_data, "vpc_id", ""),
-                            description=getattr(sg_data, "description", ""),
+                            vpc_id=getattr(sg_data, "vpc_id", None) or "",
+                            description=getattr(sg_data, "description", None) or "",
                             rules=rules,
                         )
 
@@ -167,7 +166,7 @@ class VPCs(BaseModel):
     cidr: str
     status: str = ""
     description: str = ""
-    created_at: Optional[str] = None
+    created_at: Optional[Any] = None
 
 
 class SecurityGroupRule(BaseModel):
@@ -180,7 +179,7 @@ class SecurityGroupRule(BaseModel):
     port_range_min: Optional[int] = None
     port_range_max: Optional[int] = None
     remote_ip_prefix: str = ""
-    remote_group_id: str = ""
+    remote_group_id: Optional[str] = None
     description: str = ""
 
 

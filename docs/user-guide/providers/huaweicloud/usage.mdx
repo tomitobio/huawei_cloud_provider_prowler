@@ -1,0 +1,428 @@
+---
+title: 'Huawei Cloud Usage'
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="5.15.0" />
+
+This page covers all Prowler CLI commands and options for scanning Huawei Cloud. For installation, see the [Installation guide](/user-guide/providers/huaweicloud/installation). For authentication, see the [Authentication guide](/user-guide/providers/huaweicloud/authentication).
+
+## Basic Scan
+
+Run all checks across all configured regions:
+
+```bash
+prowler huaweicloud
+```
+
+With credentials passed via environment variables:
+
+```bash
+export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
+export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
+export HUAWEICLOUD_PROJECT_ID="your-project-id"
+
+prowler huaweicloud
+```
+
+## Region Selection
+
+By default, Prowler scans the default region `cn-north-4`. To scan specific regions, use `--region` (or `-f`):
+
+```bash
+prowler huaweicloud --region cn-north-4 cn-east-3
+```
+
+To scan a single region:
+
+```bash
+prowler huaweicloud --region ap-southeast-2
+```
+
+### Available Regions
+
+Prowler supports 27 Huawei Cloud regions across the globe:
+
+| Region ID | Location |
+| --- | --- |
+| `cn-north-1` | China (Beijing-1) |
+| `cn-north-4` | China (Beijing-4) — **default** |
+| `cn-east-2` | China (Shanghai-2) |
+| `cn-east-3` | China (Shanghai-1) |
+| `cn-south-1` | China (Guangzhou) |
+| `cn-south-2` | China (Guangzhou-2) |
+| `cn-south-4` | China (Guangzhou-4) |
+| `cn-southwest-2` | China (Guiyang) |
+| `cn-north-9` | China (Ulanqab) |
+| `cn-north-2` | China (Beijing-2) |
+| `cn-east-5` | China (Shanghai-5) |
+| `cn-south-5` | China (Guangzhou-5) |
+| `ap-southeast-1` | Hong Kong |
+| `ap-southeast-2` | Singapore |
+| `ap-southeast-3` | Thailand |
+| `ap-southeast-4` | Malaysia |
+| `ap-southeast-5` | Indonesia |
+| `ap-south-1` | India |
+| `af-south-1` | South Africa |
+| `sa-brazil-1` | Brazil |
+| `la-north-2` | Mexico |
+| `la-south-2` | Chile (Santiago) |
+| `eu-west-0` | Ireland |
+| `eu-west-101` | Ireland (Dublin) |
+| `eu-central-2` | Germany (Berlin) |
+| `me-east-1` | UAE (Dubai) |
+| `ru-northwest-2` | Russia (Moscow) |
+| `ru-moscow-1` | Russia (Moscow-1) |
+
+<Note>
+Global services such as IAM are not region-scoped. Prowler queries them once regardless of the regions selected.
+</Note>
+
+## Filtering Checks
+
+### Run Specific Checks
+
+Use `--checks` (or `-c`) to run individual checks by ID:
+
+```bash
+prowler huaweicloud --checks iam_user_mfa_enabled iam_account_password_policy
+```
+
+### Run Specific Services
+
+Use `--services` (or `-s`) to run all checks for one or more services:
+
+```bash
+prowler huaweicloud --services iam ecs vpc
+```
+
+### Filter by Severity
+
+Use `--severity` to run only checks at the given severity levels:
+
+```bash
+prowler huaweicloud --severity critical high
+```
+
+Available severities: `critical`, `high`, `medium`, `low`, `informational`.
+
+### Filter by Category
+
+Use `--categories` to run checks tagged with specific categories:
+
+```bash
+prowler huaweicloud --categories security best-practices
+```
+
+### Use a Checks File
+
+Provide a JSON file listing checks to execute (see `prowler/config/checklist_example.json` for the format):
+
+```bash
+prowler huaweicloud --checks-file my_checks.json
+```
+
+<Note>
+`--checks`, `--checks-file`, `--services`, `--compliance`, `--categories`, and `--resource-groups` are mutually exclusive. Pick one filtering dimension per scan.
+</Note>
+
+## Excluding Checks and Services
+
+Exclude specific checks with `--excluded-check` (or `-e`):
+
+```bash
+prowler huaweicloud --excluded-check iam_user_mfa_enabled
+```
+
+Exclude entire services:
+
+```bash
+prowler huaweicloud --excluded-service obs rds
+```
+
+Exclude checks from a JSON file:
+
+```bash
+prowler huaweicloud --excluded-checks-file excluded.json
+```
+
+## Output Formats
+
+Control output formats with `--output-formats` (or `-M`). Available formats for Huawei Cloud:
+
+| Format | Description |
+| --- | --- |
+| `csv` | Comma-separated values |
+| `json-ocsf` | OCSF (Open Cybersecurity Schema Framework) JSON |
+| `html` | HTML report |
+| `sarif` | SARIF (Static Analysis Results Interchange Format) |
+
+```bash
+prowler huaweicloud --output-formats json-ocsf html
+```
+
+Default formats are `csv`, `json-ocsf`, and `html`.
+
+<Warning>
+`json-asff` is restricted to the AWS provider and cannot be used with Huawei Cloud.
+</Warning>
+
+### Output Directory and Filename
+
+Customize the output directory with `--output-directory` (or `-o`):
+
+```bash
+prowler huaweicloud --output-directory /tmp/prowler-reports
+```
+
+Customize the output filename (without extension) with `--output-filename` (or `-F`):
+
+```bash
+prowler huaweicloud --output-filename my-audit-report
+```
+
+### Unix Timestamps
+
+Use `--unix-timestamp` to output timestamps in Unix format instead of ISO:
+
+```bash
+prowler huaweicloud --unix-timestamp
+```
+
+## Status Filtering
+
+Filter findings by status using `--status`:
+
+```bash
+prowler huaweicloud --status FAIL
+```
+
+Available statuses: `PASS`, `FAIL`, `MANUAL`, `MUTED`.
+
+## Mutelist
+
+Suppress findings for specific resources using a mutelist YAML file:
+
+```bash
+prowler huaweicloud --mutelist-file mutelist.yaml
+```
+
+The mutelist file allows you to mute checks for specific resources, regions, or tags. See the [Mutelist tutorial](/user-guide/cli/tutorials/mutelist) for the file format and examples.
+
+## List Commands
+
+Discover available checks, services, and categories without running a scan:
+
+```bash
+# List all checks
+prowler huaweicloud --list-checks
+
+# List checks in JSON format (for use with --checks-file)
+prowler huaweicloud --list-checks-json
+
+# List covered services
+prowler huaweicloud --list-services
+
+# List available categories
+prowler huaweicloud --list-categories
+
+# List available resource groups
+prowler huaweicloud --list-resource-groups
+
+# List available compliance frameworks
+prowler huaweicloud --list-compliance
+
+# List fixers available
+prowler huaweicloud --list-fixer
+```
+
+## Logging
+
+Control log output with `--log-level` (default: `CRITICAL`):
+
+```bash
+prowler huaweicloud --log-level DEBUG
+```
+
+Available levels: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`.
+
+Write logs to a file:
+
+```bash
+prowler huaweicloud --log-file prowler.log
+```
+
+Print only logs to stdout (implies `--no-banner`):
+
+```bash
+prowler huaweicloud --only-logs
+```
+
+## Display Options
+
+Show detailed check execution and results:
+
+```bash
+prowler huaweicloud --verbose
+```
+
+Hide the Prowler banner:
+
+```bash
+prowler huaweicloud --no-banner
+```
+
+Disable color output:
+
+```bash
+prowler huaweicloud --no-color
+```
+
+## Exit Codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | All checks passed (or were manual/muted) |
+| `3` | One or more checks failed |
+
+Use `--ignore-exit-code-3` (or `-z`) to suppress exit code 3 on failed checks:
+
+```bash
+prowler huaweicloud --ignore-exit-code-3
+```
+
+This is useful in CI pipelines where you want to collect reports without failing the build.
+
+## Environment Variables
+
+All credentials and some options can be set via environment variables. `HUAWEICLOUD_*` is the preferred prefix; `HW_*` is accepted as a shorthand.
+
+| Variable | Equivalent CLI Flag | Description |
+| --- | --- | --- |
+| `HUAWEICLOUD_ACCESS_KEY_ID` / `HW_ACCESS_KEY_ID` | `--access-key-id` | Access Key ID |
+| `HUAWEICLOUD_SECRET_ACCESS_KEY` / `HW_SECRET_ACCESS_KEY` | `--secret-access-key` | Secret Access Key |
+| `HUAWEICLOUD_PROJECT_ID` / `HW_PROJECT_ID` | `--project-id` | Project ID (required for regional services) |
+| `HUAWEICLOUD_DOMAIN_ID` / `HW_DOMAIN_ID` | `--domain-id` | Domain ID |
+| `HUAWEICLOUD_SECURITY_TOKEN` | `--security-token` | Security token for temporary credentials |
+| `HUAWEICLOUD_MOCK_AUTH` | — | Set to `true` for mock authentication (development only) |
+
+## CLI Arguments Reference
+
+### Authentication
+
+| Flag | Description |
+| --- | --- |
+| `--access-key-id` | Huawei Cloud Access Key ID |
+| `--secret-access-key` | Huawei Cloud Secret Access Key |
+| `--project-id` | Huawei Cloud Project ID (required for regional services) |
+| `--domain-id` | Huawei Cloud Domain ID |
+| `--security-token` | Security token for temporary credentials |
+| `--agency-name` | Name of the agency to assume for cross-account access |
+| `--delegation-domain-id` | Domain ID of the delegating account for agency assumption |
+
+### Regions
+
+| Flag | Description |
+| --- | --- |
+| `--region`, `--filter-region`, `-f` | One or more region IDs to scan |
+
+### Check Selection
+
+| Flag | Description |
+| --- | --- |
+| `--checks`, `-c` | List of check IDs to execute |
+| `--checks-file`, `-C` | JSON file with checks to execute |
+| `--services`, `-s` | List of services to execute |
+| `--severity`, `--severities` | Filter by severity levels |
+| `--category`, `--categories` | Filter by categories |
+| `--compliance` | Filter by compliance framework |
+| `--resource-group`, `--resource-groups` | Filter by resource groups |
+| `--checks-folder`, `-x` | Directory with custom checks |
+
+### Exclusions
+
+| Flag | Description |
+| --- | --- |
+| `--excluded-check`, `-e` | Checks to exclude |
+| `--excluded-checks-file` | JSON file with checks to exclude |
+| `--excluded-service` | Services to exclude |
+
+### Output
+
+| Flag | Description |
+| --- | --- |
+| `--output-formats`, `-M` | Output formats: `csv`, `json-ocsf`, `html`, `sarif` |
+| `--output-filename`, `-F` | Custom output filename (without extension) |
+| `--output-directory`, `-o` | Custom output directory |
+| `--status` | Filter findings by status: `PASS`, `FAIL`, `MANUAL`, `MUTED` |
+| `--unix-timestamp` | Use Unix timestamps instead of ISO format |
+
+### Mutelist
+
+| Flag | Description |
+| --- | --- |
+| `--mutelist-file`, `-w` | Path to mutelist YAML file |
+
+### Logging and Display
+
+| Flag | Description |
+| --- | --- |
+| `--log-level` | Log level: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
+| `--log-file` | Log file path |
+| `--only-logs` | Print only logs to stdout |
+| `--verbose` | Show all checks and results |
+| `--no-banner`, `-b` | Hide Prowler banner |
+| `--no-color` | Disable color output |
+| `--ignore-exit-code-3`, `-z` | Suppress exit code 3 on failures |
+
+### Integrations
+
+| Flag | Description |
+| --- | --- |
+| `--shodan`, `-N` | Check public IPs against Shodan (requires API key) |
+| `--slack` | Send execution summary to Slack (requires `SLACK_API_TOKEN` and `SLACK_CHANNEL_NAME`) |
+| `--push-to-cloud` | Send findings to Prowler Cloud (requires `PROWLER_CLOUD_API_KEY`) |
+
+## Common Examples
+
+### Quick security audit of critical findings
+
+```bash
+prowler huaweicloud \
+  --severity critical high \
+  --output-formats json-ocsf html \
+  --output-directory ./reports
+```
+
+### Scan specific services in multiple regions
+
+```bash
+prowler huaweicloud \
+  --services iam ecs vpc kms \
+  --region cn-north-4 ap-southeast-2 eu-west-0
+```
+
+### CI/CD pipeline scan
+
+```bash
+prowler huaweicloud \
+  --output-formats json-ocsf \
+  --output-filename ci-audit \
+  --ignore-exit-code-3 \
+  --no-banner \
+  --no-color
+```
+
+### Development with mock data
+
+```bash
+export HUAWEICLOUD_MOCK_AUTH="true"
+prowler huaweicloud --services iam --verbose
+```
+
+## Next Steps
+
+- [Authentication](/user-guide/providers/huaweicloud/authentication) — credential setup and permissions
+- [Setup](/user-guide/providers/huaweicloud/setup) — end-to-end setup for Prowler Server and CLI
+- [Provider Development](/user-guide/providers/huaweicloud/provider-development) — create custom checks and services

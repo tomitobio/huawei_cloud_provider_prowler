@@ -6,7 +6,7 @@ from tests.providers.huaweicloud.huaweicloud_fixtures import (
 
 
 class TestRdsInstanceDiskEncryption:
-    def test_encryption_enabled_passes(self):
+    def test_instance_with_disk_encryption_passes(self):
         rds_client = mock.MagicMock()
 
         with (
@@ -22,21 +22,16 @@ class TestRdsInstanceDiskEncryption:
             from prowler.providers.huaweicloud.services.rds.rds_instance_disk_encryption.rds_instance_disk_encryption import (
                 rds_instance_disk_encryption,
             )
-            from prowler.providers.huaweicloud.services.rds.rds_service import (
-                RDSInstance,
-            )
+            from prowler.providers.huaweicloud.services.rds.rds_service import RDSInstance
 
-            rds_client.instances = [
-                RDSInstance(
-                    id="rds-1",
-                    name="encrypted-db",
-                    region="la-south-2",
-                    status="ACTIVE",
-                    engine="mysql",
-                    engine_version="8.0",
-                    disk_encryption_id="kms-001",
-                ),
-            ]
+            instance = RDSInstance(
+                id="rds-1",
+                name="encrypted-db",
+                status="ACTIVE",
+                region="la-south-2",
+                disk_encryption_id="kms-key-001",
+            )
+            rds_client.instances = [instance]
             rds_client.audited_account = "123456789012"
 
             check = rds_instance_disk_encryption()
@@ -44,9 +39,9 @@ class TestRdsInstanceDiskEncryption:
 
             assert len(result) == 1
             assert result[0].status == "PASS"
-            assert "kms-001" in result[0].status_extended
+            assert "kms-key-001" in result[0].status_extended
 
-    def test_no_encryption_fails(self):
+    def test_instance_without_disk_encryption_fails(self):
         rds_client = mock.MagicMock()
 
         with (
@@ -62,21 +57,16 @@ class TestRdsInstanceDiskEncryption:
             from prowler.providers.huaweicloud.services.rds.rds_instance_disk_encryption.rds_instance_disk_encryption import (
                 rds_instance_disk_encryption,
             )
-            from prowler.providers.huaweicloud.services.rds.rds_service import (
-                RDSInstance,
-            )
+            from prowler.providers.huaweicloud.services.rds.rds_service import RDSInstance
 
-            rds_client.instances = [
-                RDSInstance(
-                    id="rds-1",
-                    name="plain-db",
-                    region="la-south-2",
-                    status="ACTIVE",
-                    engine="mysql",
-                    engine_version="8.0",
-                    disk_encryption_id="",
-                ),
-            ]
+            instance = RDSInstance(
+                id="rds-1",
+                name="unencrypted-db",
+                status="ACTIVE",
+                region="la-south-2",
+                disk_encryption_id="",
+            )
+            rds_client.instances = [instance]
             rds_client.audited_account = "123456789012"
 
             check = rds_instance_disk_encryption()
@@ -84,7 +74,7 @@ class TestRdsInstanceDiskEncryption:
 
             assert len(result) == 1
             assert result[0].status == "FAIL"
-            assert "does not have" in result[0].status_extended
+            assert "does not have disk encryption" in result[0].status_extended
 
     def test_no_instances(self):
         rds_client = mock.MagicMock()

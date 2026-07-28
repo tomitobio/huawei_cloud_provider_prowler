@@ -1,0 +1,137 @@
+---
+title: 'Getting Started With Huawei Cloud on Prowler'
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+Prowler supports Huawei Cloud both from the CLI and from Prowler Cloud. This guide walks you through the requirements, how to connect the provider in the UI, and how to run scans from the command line.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+1. A **Huawei Cloud Account ID** (visible in the Huawei Cloud Console under your profile).
+2. **Credentials** with appropriate permissions:
+   - **IAM User with Access Keys (AK/SK)**: For local CLI usage or CI setups. See [IAM User and AK/SK](/user-guide/providers/huaweicloud/authentication#iam-user-and-ak-sk).
+3. The required permissions for Prowler to audit your resources. See the [Huawei Cloud Authentication](/user-guide/providers/huaweicloud/authentication) guide for setup steps and permission guidance.
+
+<CardGroup cols={2}>
+  <Card title="Prowler Cloud" icon="cloud" href="#prowler-cloud">
+    Onboard Huawei Cloud using Prowler Cloud
+  </Card>
+  <Card title="Prowler CLI" icon="terminal" href="#prowler-cli">
+    Onboard Huawei Cloud using Prowler CLI
+  </Card>
+</CardGroup>
+
+## Prowler Cloud
+
+<VersionBadge version="5.18.0" />
+
+### Step 1: Get Your Huawei Cloud Account ID
+
+1. Log in to the [Huawei Cloud Console](https://console.huaweicloud.com/)
+2. Click on your profile avatar in the top-right corner
+3. Locate and copy your Account ID (Domain ID)
+
+### Step 2: Access Prowler Cloud
+
+1. Navigate to [Prowler Cloud](https://cloud.prowler.com/) or launch [Prowler App](/user-guide/tutorials/prowler-app)
+2. Go to "Configuration" > "Providers"
+
+    ![Providers Page](/images/prowler-app/cloud-providers-page.png)
+
+3. Click "Add Provider"
+
+    ![Add a Provider](/images/prowler-app/add-cloud-provider.png)
+
+4. Select "Huawei Cloud"
+
+5. Enter your Huawei Cloud Account ID and optionally provide a friendly alias
+
+### Step 3: Provide Authentication
+
+After the Account ID is in place, provide your AK/SK credentials:
+
+#### Credentials (Static AK/SK)
+
+1. Enter the **Access Key ID** and **Secret Access Key** of the IAM user
+2. Enter the **Region** to scan (e.g., `cn-north-4`)
+
+<Warning>
+Static access keys are long-lived credentials. For production environments, consider rotating them regularly and restricting the IAM user's permissions to read-only.
+</Warning>
+
+### Step 4: Launch the Scan
+
+1. Click "Next" to review your configuration
+2. Click "Launch Scan" to start auditing your Huawei Cloud account
+
+---
+
+## Prowler CLI
+
+<VersionBadge version="5.15.0" />
+
+You can also run Huawei Cloud assessments directly from the CLI. Both command-line flags and environment variables are supported.
+
+### Step 1: Select an Authentication Method
+
+Choose one of the following authentication methods. For step-by-step credential creation and the full list of supported authentication modes, see the [Authentication guide](/user-guide/providers/huaweicloud/authentication).
+
+#### Environment Variables
+
+```bash
+export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
+export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
+prowler huaweicloud
+```
+
+#### CLI Arguments
+
+```bash
+prowler huaweicloud \
+  --access-key-id "your-access-key-id" \
+  --secret-access-key "your-secret-access-key"
+```
+
+#### Mock Authentication (Development)
+
+For development and testing without real credentials:
+
+```bash
+export HUAWEICLOUD_MOCK_AUTH="true"
+prowler huaweicloud
+```
+
+### Step 2: Run the First Scan
+
+#### Scan all regions
+
+```bash
+prowler huaweicloud
+```
+
+#### Scan specific regions
+
+```bash
+prowler huaweicloud --region cn-north-4 cn-east-3
+```
+
+#### Run specific checks
+
+```bash
+prowler huaweicloud --checks iam_account_password_policy iam_root_hardware_mfa_enabled
+```
+
+#### Run specific services
+
+```bash
+prowler huaweicloud --services vpc ecs iam
+```
+
+### Additional Tips
+
+- Combine flags (for example, `--checks` or `--services`) just like with other providers.
+- Use `--output-modes` to export findings in JSON, CSV, ASFF, etc.
+- For more authentication options, see the [Authentication guide](/user-guide/providers/huaweicloud/authentication).

@@ -6,7 +6,7 @@ from tests.providers.huaweicloud.huaweicloud_fixtures import (
 
 
 class TestEcsInstanceSecurityGroupsAttached:
-    def test_security_groups_attached_passes(self):
+    def test_instance_with_security_groups_passes(self):
         ecs_client = mock.MagicMock()
 
         with (
@@ -22,19 +22,16 @@ class TestEcsInstanceSecurityGroupsAttached:
             from prowler.providers.huaweicloud.services.ecs.ecs_instance_security_groups_attached.ecs_instance_security_groups_attached import (
                 ecs_instance_security_groups_attached,
             )
-            from prowler.providers.huaweicloud.services.ecs.ecs_service import (
-                Instance,
-            )
+            from prowler.providers.huaweicloud.services.ecs.ecs_service import Instance
 
-            ecs_client.instances = {
-                "ecs-1": Instance(
-                    id="ecs-1",
-                    name="web-server",
-                    region="la-south-2",
-                    status="ACTIVE",
-                    security_groups={"sg-1": "web-sg"},
-                ),
-            }
+            instance = Instance(
+                id="inst-1",
+                name="web-server",
+                region="la-south-2",
+                status="ACTIVE",
+                security_groups={"sg-001": "web-sg", "sg-002": "db-sg"},
+            )
+            ecs_client.instances = {instance.id: instance}
             ecs_client.audited_account = "123456789012"
 
             check = ecs_instance_security_groups_attached()
@@ -44,7 +41,7 @@ class TestEcsInstanceSecurityGroupsAttached:
             assert result[0].status == "PASS"
             assert "web-sg" in result[0].status_extended
 
-    def test_no_security_groups_fails(self):
+    def test_instance_without_security_groups_fails(self):
         ecs_client = mock.MagicMock()
 
         with (
@@ -60,19 +57,16 @@ class TestEcsInstanceSecurityGroupsAttached:
             from prowler.providers.huaweicloud.services.ecs.ecs_instance_security_groups_attached.ecs_instance_security_groups_attached import (
                 ecs_instance_security_groups_attached,
             )
-            from prowler.providers.huaweicloud.services.ecs.ecs_service import (
-                Instance,
-            )
+            from prowler.providers.huaweicloud.services.ecs.ecs_service import Instance
 
-            ecs_client.instances = {
-                "ecs-1": Instance(
-                    id="ecs-1",
-                    name="web-server",
-                    region="la-south-2",
-                    status="ACTIVE",
-                    security_groups={},
-                ),
-            }
+            instance = Instance(
+                id="inst-1",
+                name="web-server",
+                region="la-south-2",
+                status="ACTIVE",
+                security_groups={},
+            )
+            ecs_client.instances = {instance.id: instance}
             ecs_client.audited_account = "123456789012"
 
             check = ecs_instance_security_groups_attached()
@@ -80,7 +74,7 @@ class TestEcsInstanceSecurityGroupsAttached:
 
             assert len(result) == 1
             assert result[0].status == "FAIL"
-            assert "does not have" in result[0].status_extended
+            assert "does not have any security groups" in result[0].status_extended
 
     def test_no_instances(self):
         ecs_client = mock.MagicMock()

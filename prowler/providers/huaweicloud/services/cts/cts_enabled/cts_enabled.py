@@ -12,6 +12,7 @@ class cts_enabled(Check):
             report = CheckReportHuaweiCloud(metadata=self.metadata(), resource={})
             report.region = cts_client.region
             report.resource_id = f"{cts_client.audited_account}-cts-tracker"
+            report.resource_name = "cts-tracker"
             report.resource_arn = f"HUAWEICLOUD::CTS::{cts_client.audited_account}:tracker"
             report.status = "FAIL"
             report.status_extended = "No CTS tracker found. Cloud Trace Service is not enabled."

@@ -1,0 +1,450 @@
+---
+title: 'Huawei Cloud Provider Development'
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="5.15.0" />
+
+This guide explains how to add new checks and services to the Huawei Cloud provider. It covers the directory layout, the service class pattern, the check pattern, and the test pattern — with copy-and-paste templates you can adapt to your own service.
+
+For a deeper architectural overview, see the [Developer Guide](/developer-guide/huaweicloud-details).
+
+## Directory Structure
+
+Every service lives under `prowler/providers/huaweicloud/services/<service>/`:
+
+```
+prowler/providers/huaweicloud/services/
+└── myservice/
+    ├── __init__.py                  # empty
+    ├── myservice_service.py         # service class + Pydantic models
+    ├── myservice_client.py          # one-liner client instantiation
+    └── myservice_check_name/        # one directory per check
+        ├── __init__.py              # empty
+        ├── myservice_check_name.py  # check class
+        └── myservice_check_name.metadata.json
+```
+
+Tests mirror this layout under `tests/providers/huaweicloud/services/`:
+
+```
+tests/providers/huaweicloud/services/
+└── myservice/
+    └── myservice_check_name/
+        └── myservice_check_name_test.py
+```
+
+## Creating a New Service
+
+A service class fetches data from the Huawei Cloud API and stores it as typed attributes. Each service extends `HuaweiCloudService`, which handles session management, regional client generation, and threading.
+
+### 1. Write the Service Class
+
+Create `prowler/providers/huaweicloud/services/myservice/myservice_service.py`:
+
+```python
+from typing import List, Optional
+
+from pydantic.v1 import BaseModel
+
+from prowler.lib.logger import logger
+from prowler.lib.scan_filters.scan_filters import is_resource_filtered
+from prowler.providers.huaweicloud.lib.service.service import HuaweiCloudService
+
+
+class MyService(HuaweiCloudService):
+    """MyService service class for Huawei Cloud."""
+
+    def __init__(self, provider):
+        # global_service=True for global services (e.g. IAM)
+        # global_service=False for regional services (e.g. ECS, VPC)
+        super().__init__(__class__.__name__, provider, global_service=False)
+
+        self.resources: List[MyResource] = []
+
+        if self.session.is_mock:
+            self._load_mock_data()
+            return
+
+        # For regional services, use __threading_call__ to fan out across regions
+        self.__threading_call__(self._list_resources)
+
+    def _load_mock_data(self):
+        """Load mock data for testing."""
+        self.resources = [
+            MyResource(
+                id="resource-mock-001",
+                name="test-resource",
+                region="la-south-2",
+            ),
+        ]
+
+    def _list_resources(self, regional_client):
+        """List resources in a region."""
+        region = getattr(regional_client, "region", "unknown")
+        logger.info(f"MYSERVICE - Listing Resources in {region}...")
+
+        try:
+            from huaweicloudsdkmyservice.v1 import ListResourcesRequest
+
+            request = ListResourcesRequest()
+            response = self._call_with_retries(
+                regional_client.list_resources, request
+            )
+
+            if response and response.resources:
+                for resource_data in response.resources:
+                    if not self.audit_resources or is_resource_filtered(
+                        resource_data.id, self.audit_resources
+                    ):
+                        self.resources.append(
+                            MyResource(
+                                id=resource_data.id,
+                                name=getattr(resource_data, "name", resource_data.id),
+                                region=region,
+                            )
+                        )
+
+        except Exception as error:
+            logger.error(
+                f"{region} -- {error.__class__.__name__}[{error.__traceback__.tb_lineno}]: {error}"
+            )
+
+
+class MyResource(BaseModel):
+    """MyResource data model."""
+
+    id: str
+    name: str
+    region: str
+    # Add more fields as needed
+```
+
+#### Global vs. Regional Services
+
+| | Global Service | Regional Service |
+|---|---|---|
+| **Example** | IAM, TMS | ECS, VPC, RDS, OBS |
+| **`global_service`** | `True` | `False` |
+| **Client** | `self.client` (single) | `self.regional_clients` (per-region dict) |
+| **Data fetching** | Call methods directly | Use `self.__threading_call__(self._method)` |
+| **Region** | `HUAWEICLOUD_DEFAULT_REGION` | Provider's configured regions |
+
+#### Global Service Example
+
+For a global service like IAM, the `__init__` calls API methods directly instead of using `__threading_call__`:
+
+```python
+def __init__(self, provider):
+    super().__init__(__class__.__name__, provider, global_service=True)
+
+    self.users: List[MyUser] = []
+
+    if self.session.is_mock:
+        self._load_mock_data()
+        return
+
+    self._list_users()  # called directly, no threading
+```
+
+### 2. Write the Client One-Liner
+
+Create `prowler/providers/huaweicloud/services/myservice/myservice_client.py`:
+
+```python
+from prowler.providers.huaweicloud.services.myservice.myservice_service import MyService
+from prowler.providers.common.provider import Provider
+
+myservice_client = MyService(Provider.get_global_provider())
+```
+
+This module-level instantiation makes the service data available to all checks in the service.
+
+### 3. Create `__init__.py`
+
+Create an empty `prowler/providers/huaweicloud/services/myservice/__init__.py`.
+
+## Creating a New Check
+
+A check evaluates the data fetched by the service and produces findings with `PASS` or `FAIL` status.
+
+### 1. Write the Check Class
+
+Create `prowler/providers/huaweicloud/services/myservice/myservice_check_name/myservice_check_name.py`:
+
+```python
+from prowler.lib.check.models import Check, CheckReportHuaweiCloud
+from prowler.providers.huaweicloud.services.myservice.myservice_client import myservice_client
+
+
+class myservice_check_name(Check):
+    """Ensure MyService resources meet the requirement."""
+
+    def execute(self) -> list[CheckReportHuaweiCloud]:
+        findings = []
+
+        for resource in myservice_client.resources:
+            report = CheckReportHuaweiCloud(
+                metadata=self.metadata(), resource=resource
+            )
+            report.region = resource.region
+            report.resource_id = resource.id
+            report.resource_arn = (
+                f"huaweicloud:myservice:{resource.region}:{myservice_client.audited_account}:resource/{resource.id}"
+            )
+
+            if resource.is_compliant:
+                report.status = "PASS"
+                report.status_extended = (
+                    f"Resource {resource.name} is compliant."
+                )
+            else:
+                report.status = "FAIL"
+                report.status_extended = (
+                    f"Resource {resource.name} is not compliant."
+                )
+
+            findings.append(report)
+
+        return findings
+```
+
+#### Key Points
+
+- The class name **must** match the check ID (and the directory name).
+- `CheckReportHuaweiCloud` is initialized with `metadata=self.metadata()` and `resource=<object>`.
+- Set `report.region`, `report.resource_id`, and `report.resource_arn` on every finding.
+- The ARN format is `huaweicloud:<service>:<region>:<account_id>:<resource_type>/<resource_id>`.
+- Return a list of `CheckReportHuaweiCloud` objects.
+
+### 2. Write the Metadata JSON
+
+Create `myservice_check_name.metadata.json`:
+
+```json
+{
+  "Provider": "huaweicloud",
+  "CheckID": "myservice_check_name",
+  "CheckTitle": "MyService resources are compliant",
+  "CheckType": [],
+  "ServiceName": "myservice",
+  "SubServiceName": "",
+  "ResourceIdTemplate": "",
+  "Severity": "high",
+  "ResourceType": "HUAWEICLOUD::MyService::Resource",
+  "ResourceGroup": "MyService",
+  "Description": "Description of what this check verifies.",
+  "Risk": "Description of the risk if this check fails.",
+  "RelatedUrl": "",
+  "AdditionalURLs": [
+    "https://support.huaweicloud.com/intl/en-us/usermanual-myservice/"
+  ],
+  "Remediation": {
+    "Code": {
+      "CLI": "",
+      "NativeIaC": "",
+      "Other": "1. Log on to the Huawei Cloud console.\n2. Navigate to MyService.\n3. Fix the resource configuration.",
+      "Terraform": ""
+    },
+    "Recommendation": {
+      "Text": "Recommendation text for remediation.",
+      "Url": "https://hub.prowler.com/check/myservice_check_name"
+    }
+  },
+  "Categories": [
+    "identity-access"
+  ],
+  "DependsOn": [],
+  "RelatedTo": [],
+  "Notes": ""
+}
+```
+
+#### Metadata Fields
+
+| Field | Description | Required Values |
+|---|---|---|
+| `Provider` | Always `"huaweicloud"` | `huaweicloud` |
+| `CheckID` | Must match class name and directory name | snake_case |
+| `CheckTitle` | Human-readable title | string |
+| `ServiceName` | Service directory name | snake_case |
+| `Severity` | Check severity | `critical`, `high`, `medium`, `low`, `informational` |
+| `ResourceType` | Cloud resource type | `HUAWEICLOUD::Service::Resource` |
+| `ResourceGroup` | Grouping for UI | Service name or category |
+| `Categories` | Compliance categories | e.g. `identity-access`, `encryption`, `networking` |
+| `Remediation.Code.Other` | Step-by-step remediation instructions | string |
+
+### 3. Create `__init__.py`
+
+Create an empty `__init__.py` in the check directory.
+
+## Writing Tests
+
+Tests use the `set_mocked_huaweicloud_provider` fixture and mock the service client.
+
+### Test File Template
+
+Create `tests/providers/huaweicloud/services/myservice/myservice_check_name/myservice_check_name_test.py`:
+
+```python
+from unittest import mock
+
+from tests.providers.huaweicloud.huaweicloud_fixtures import (
+    set_mocked_huaweicloud_provider,
+)
+
+
+class TestMyserviceCheckName:
+    def test_resource_compliant_passes(self):
+        myservice_client = mock.MagicMock()
+
+        with (
+            mock.patch(
+                "prowler.providers.common.provider.Provider.get_global_provider",
+                return_value=set_mocked_huaweicloud_provider(),
+            ),
+            mock.patch(
+                "prowler.providers.huaweicloud.services.myservice.myservice_check_name.myservice_check_name.myservice_client",
+                new=myservice_client,
+            ),
+        ):
+            from prowler.providers.huaweicloud.services.myservice.myservice_check_name.myservice_check_name import (
+                myservice_check_name,
+            )
+            from prowler.providers.huaweicloud.services.myservice.myservice_service import (
+                MyResource,
+            )
+
+            compliant_resource = MyResource(
+                id="resource-1",
+                name="compliant-resource",
+                region="la-south-2",
+            )
+            myservice_client.resources = [compliant_resource]
+            myservice_client.audited_account = "123456789012"
+
+            check = myservice_check_name()
+            result = check.execute()
+
+            assert len(result) == 1
+            assert result[0].status == "PASS"
+            assert "compliant" in result[0].status_extended
+
+    def test_resource_not_compliant_fails(self):
+        myservice_client = mock.MagicMock()
+
+        with (
+            mock.patch(
+                "prowler.providers.common.provider.Provider.get_global_provider",
+                return_value=set_mocked_huaweicloud_provider(),
+            ),
+            mock.patch(
+                "prowler.providers.huaweicloud.services.myservice.myservice_check_name.myservice_check_name.myservice_client",
+                new=myservice_client,
+            ),
+        ):
+            from prowler.providers.huaweicloud.services.myservice.myservice_check_name.myservice_check_name import (
+                myservice_check_name,
+            )
+            from prowler.providers.huaweicloud.services.myservice.myservice_service import (
+                MyResource,
+            )
+
+            non_compliant_resource = MyResource(
+                id="resource-2",
+                name="non-compliant-resource",
+                region="la-south-2",
+            )
+            myservice_client.resources = [non_compliant_resource]
+            myservice_client.audited_account = "123456789012"
+
+            check = myservice_check_name()
+            result = check.execute()
+
+            assert len(result) == 1
+            assert result[0].status == "FAIL"
+            assert "not compliant" in result[0].status_extended
+```
+
+### Key Test Patterns
+
+1. **Mock the client**: Replace the service client with a `MagicMock()` and set only the attributes your check reads.
+2. **Mock the provider**: Patch `Provider.get_global_provider` with `set_mocked_huaweicloud_provider()`.
+3. **Import inside the `with` block**: Import the check class and data models inside the mock context so they pick up the mocked client.
+4. **Assert on `execute()` results**: Check `len(result)`, `result[0].status`, and `result[0].status_extended`.
+
+## Running Tests
+
+Run tests for your service:
+
+```bash
+uv run pytest tests/providers/huaweicloud/services/myservice/ -v
+```
+
+Run the full Huawei Cloud test suite:
+
+```bash
+uv run pytest tests/providers/huaweicloud/ -v
+```
+
+## Verifying Your Check
+
+List your new check to confirm Prowler discovers it:
+
+```bash
+prowler huaweicloud --list-checks | grep myservice
+```
+
+Run the check against a real account:
+
+```bash
+prowler huaweicloud --checks myservice_check_name
+```
+
+## Available Services
+
+The Huawei Cloud provider currently includes these services:
+
+<!-- TODO: services-list -->
+
+| Service | Description |
+|---|---|
+| `bms` | Bare Metal Server |
+| `cbr` | Cloud Backup and Recovery |
+| `cce` | Cloud Container Engine |
+| `ces` | Cloud Eye Service |
+| `cfw` | Cloud Firewall |
+| `config` | Resource Configuration |
+| `cts` | Cloud Trace Service |
+| `dcs` | Distributed Cache Service |
+| `dns` | Domain Name Service |
+| `ecs` | Elastic Cloud Server |
+| `eip` | Elastic IP |
+| `elb` | Elastic Load Balance |
+| `evs` | Elastic Volume Service |
+| `functiongraph` | FunctionGraph |
+| `iam` | Identity and Access Management |
+| `identitycenter` | Identity Center |
+| `kms` | Key Management Service |
+| `lts` | Log Tank Service |
+| `nat` | NAT Gateway |
+| `obs` | Object Storage Service |
+| `rds` | Relational Database Service |
+| `sfs` | Scalable File Service |
+| `smn` | Simple Message Notification |
+| `tms` | Tag Management Service |
+| `vpc` | Virtual Private Cloud |
+| `vpn` | Virtual Private Network |
+| `waf` | Web Application Firewall |
+
+## Summary
+
+To add a new check to the Huawei Cloud provider:
+
+1. **Create or reuse a service** — write `<service>_service.py` with a class extending `HuaweiCloudService`, define Pydantic data models, implement `_load_mock_data()`, and add API call methods.
+2. **Create the client** — write a one-liner `<service>_client.py` that instantiates the service.
+3. **Create the check** — write a class extending `Check` with an `execute()` method that returns `CheckReportHuaweiCloud` findings.
+4. **Create the metadata** — write a `.metadata.json` file with all required fields.
+5. **Write tests** — mock the client, use `set_mocked_huaweicloud_provider()`, and assert on `PASS`/`FAIL` results.
+6. **Verify** — run tests and confirm the check appears in `--list-checks`.

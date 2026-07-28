@@ -1,0 +1,132 @@
+---
+title: 'Huawei Cloud Authentication in Prowler'
+---
+
+Prowler supports Huawei Cloud authentication using Access Keys (AK/SK). If credentials are provided via multiple methods, the provider resolves them in this order:
+
+1. **Environment Variables** (`HUAWEICLOUD_*` or `HW_*` prefixes)
+2. **CLI Arguments** (`--access-key-id`, `--secret-access-key`)
+3. **Mock Authentication** (for development only)
+
+<Warning>
+Do not use the AK/SK pair of the main Huawei Cloud account for Prowler. Use an IAM user with read-only permissions instead.
+</Warning>
+
+## Choose The Right Method
+
+| Where Prowler runs | What you need to create | Recommended method |
+| --- | --- | --- |
+| Local workstation | IAM user + AK/SK pair | [IAM User And AK/SK](#iam-user-and-ak-sk) |
+| CI runner | IAM user + AK/SK pair | [IAM User And AK/SK](#iam-user-and-ak-sk) |
+| Development / Testing | No credentials needed | [Mock Authentication](#mock-authentication) |
+
+## IAM User And AK/SK
+
+This is the simplest setup for a workstation or a CI runner.
+
+### Create The IAM User
+
+1. Open the [IAM console](https://console.huaweicloud.com/iam/).
+2. Go to `Users` and click `Create User`.
+3. Enter a username and select `Programmatic access` for the access type.
+4. In `Credential`, select `Access Key`.
+
+![Create an IAM user and enable Access Key](./img/create_user.png)
+
+5. Save the generated `Access Key ID` and `Secret Access Key` immediately. Huawei Cloud only shows the secret once.
+6. Grant the user the read permissions required for the Huawei Cloud services you want Prowler to scan.
+
+![Grant permissions to the IAM user](./img/grant_permissions.png)
+
+Huawei Cloud walkthroughs with current console screenshots:
+
+- [Create an IAM user](https://support.huaweicloud.com/intl/en-us/usermanual-iam/iam_02_0001.html)
+- [Create an AK/SK pair](https://support.huaweicloud.com/intl/en-us/usermanual-iam/iam_02_0003.html)
+- [Grant permissions to an IAM user](https://support.huaweicloud.com/intl/en-us/usermanual-iam/iam_01_063.html)
+
+### Use The AK/SK With Prowler
+
+```bash
+export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
+export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
+
+prowler huaweicloud
+```
+
+Prowler also accepts `HW_ACCESS_KEY_ID` and `HW_SECRET_ACCESS_KEY` for compatibility, but `HUAWEICLOUD_*` is the preferred naming.
+
+### Use CLI Arguments
+
+If you prefer not to use environment variables, you can pass credentials directly:
+
+```bash
+prowler huaweicloud \
+  --access-key-id "your-access-key-id" \
+  --secret-access-key "your-secret-access-key"
+```
+
+## Mock Authentication
+
+Use this for development and testing without real Huawei Cloud credentials.
+
+```bash
+export HUAWEICLOUD_MOCK_AUTH="true"
+
+prowler huaweicloud
+```
+
+<Note>
+Mock authentication returns static test data for the Santiago region (`la-south-2`) with a dummy account ID. This is intended for development only and should never be used in production.
+</Note>
+
+## Permissions Guidance
+
+The exact minimum policy depends on the checks and services you enable.
+
+### System Policies
+
+| Prowler use case | Policy name in IAM console | Notes |
+| --- | --- | --- |
+| IAM checks | `IAM ReadOnly` | Covers IAM read APIs such as users, password policies, and MFA devices. |
+| ECS checks | `ECS ReadOnly` | Read-only ECS access. |
+| VPC checks | `VPC ReadOnly` | Read-only VPC access. |
+| CTS checks | `CTS ReadOnly` | Read-only Cloud Trace Service access. |
+| ELB checks | `ELB ReadOnly` | Read-only Elastic Load Balancing access. |
+| KMS checks | `KMS ReadOnly` | Read-only Key Management Service access. |
+| OBS checks | `OBS ReadOnly` | Read-only Object Storage Service access. |
+| RDS checks | `RDS ReadOnly` | Read-only Relational Database Service access. |
+| WAF checks | `WAF ReadOnly` | Read-only Web Application Firewall access. |
+
+### Recommended Starting Point
+
+For a broad Huawei Cloud scan, the identity used by Prowler usually needs read access to the services Prowler currently audits, including:
+
+- `IAM`
+- `ECS`
+- `VPC`
+- `CTS`
+- `ELB`
+- `KMS`
+- `OBS`
+- `RDS`
+- `WAF`
+
+Use the following setup as a practical starting point:
+
+- Create an **IAM user** with an AK/SK pair and attach the read-only policies above directly to the user.
+
+If you prefer a tighter custom policy instead of system policies, the current provider relies on read APIs such as:
+
+- `iam:list*`, `iam:get*`
+- `ecs:list*`, `ecs:get*`, `ecs:show*`
+- `vpc:list*`, `vpc:get*`, `vpc:show*`
+- `cts:list*`
+- `elb:list*`, `elb:get*`, `elb:show*`
+- `kms:list*`, `kms:get*`, `kms:describe*`
+- `obs:list*`, `obs:get*`
+- `rds:list*`, `rds:get*`
+- `waf:list*`, `waf:get*`, `waf:show*`
+
+<Note>
+If a service is denied, Prowler can still start, but checks for that service may fail or return incomplete results.
+</Note>

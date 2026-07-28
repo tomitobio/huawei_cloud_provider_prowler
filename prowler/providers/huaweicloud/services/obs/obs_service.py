@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 
 from pydantic.v1 import BaseModel
 
@@ -45,49 +45,69 @@ class OBS(HuaweiCloudService):
 
     def _list_buckets(self):
         """List all OBS buckets."""
-        if not self.regional_clients:
+        if not self.client:
             return
 
-        region = list(self.regional_clients.keys())[0]
-        client = self.regional_clients[region]
+        region = self.region
+        client = self.client
         logger.info(f"OBS - Listing Buckets in {region}...")
 
         try:
-            from huaweicloudsdkobs import ObsClient
+            from huaweicloudsdkobs.v1 import (
+                ListBucketsRequest,
+                GetBucketAclRequest,
+                GetBucketPublicStatusRequest,
+            )
 
-            response = client.listBuckets()
+            response = self._call_with_retries(
+                client.list_buckets, ListBucketsRequest()
+            )
 
-            if response and response.body and response.body.buckets:
-                for bucket_data in response.body.buckets:
+            if response and response.buckets:
+                buckets_list = getattr(response.buckets, "bucket", None) or []
+                for bucket_data in buckets_list:
                     bucket_name = getattr(bucket_data, "name", "")
                     bucket_region = getattr(bucket_data, "location", region)
 
                     is_encrypted = False
                     is_public = False
-                    acl = ""
+                    acl = "private"
 
                     try:
-                        acl_response = client.getBucketAcl(bucket_name)
-                        if acl_response and acl_response.body:
-                            grants = getattr(acl_response.body, "grants", [])
+                        public_response = self._call_with_retries(
+                            client.get_bucket_public_status,
+                            GetBucketPublicStatusRequest(bucket_name=bucket_name),
+                        )
+                        if public_response and getattr(
+                            public_response, "is_public", False
+                        ):
+                            is_public = True
+                            acl = "public"
+                    except Exception as public_error:
+                        logger.error(
+                            f"OBS - Public status check failed for bucket {bucket_name}: {public_error}"
+                        )
+
+                    try:
+                        acl_response = self._call_with_retries(
+                            client.get_bucket_acl,
+                            GetBucketAclRequest(bucket_name=bucket_name),
+                        )
+                        if acl_response and acl_response.access_control_list:
+                            grants = getattr(
+                                acl_response.access_control_list, "grant", []
+                            )
                             for grant in grants:
                                 grantee = getattr(grant, "grantee", None)
                                 if grantee:
-                                    grantee_id = getattr(grantee, "id", "")
-                                    if grantee_id == "Everyone" or grantee_id == "*":
+                                    grantee_canned = getattr(grantee, "canned", "")
+                                    if grantee_canned in ("AllUsers", "Everyone"):
                                         is_public = True
                                         acl = "public"
                     except Exception as acl_error:
                         logger.error(
                             f"OBS - ACL check failed for bucket {bucket_name}: {acl_error}"
                         )
-
-                    try:
-                        encryption_response = client.getBucketEncryption(bucket_name)
-                        if encryption_response and encryption_response.body:
-                            is_encrypted = True
-                    except Exception:
-                        pass
 
                     self.buckets.append(
                         Bucket(

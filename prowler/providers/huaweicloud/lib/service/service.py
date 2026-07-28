@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
 from prowler.lib.logger import logger
+from prowler.providers.huaweicloud.config import HUAWEICLOUD_DEFAULT_REGION
 
 MAX_WORKERS = 10
 
@@ -41,10 +42,16 @@ class HuaweiCloudService:
         # Thread pool for __threading_call__
         self.thread_pool = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
+        # Determine the region: global services use the default region,
+        # regional services use the provider's default region
+        if global_service:
+            self.region = HUAWEICLOUD_DEFAULT_REGION
+        else:
+            self.region = provider.get_default_region(self.service)
+
         # Mock mode: skip real client creation
         if self.session.is_mock:
             self.regional_clients: Dict[str, Any] = {}
-            self.region = provider.get_default_region(self.service)
             self.client = None
             return
 
@@ -53,8 +60,7 @@ class HuaweiCloudService:
         if not global_service:
             self.regional_clients = provider.generate_regional_clients(self.service)
 
-        # Get default region and client
-        self.region = provider.get_default_region(self.service)
+        # Get client for the region
         self.client = self.session.client(self.service, self.region)
 
     def __get_session__(self):

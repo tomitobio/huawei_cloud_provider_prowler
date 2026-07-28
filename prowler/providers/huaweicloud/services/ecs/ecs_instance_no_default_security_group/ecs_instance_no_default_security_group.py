@@ -12,9 +12,7 @@ class ecs_instance_no_default_security_group(Check):
             report = CheckReportHuaweiCloud(metadata=self.metadata(), resource=instance)
             report.region = instance.region
             report.resource_id = instance.id
-            report.resource_arn = (
-                f"huaweicloud:ecs:{instance.region}:{ecs_client.audited_account}:instance/{instance.id}"
-            )
+            report.resource_arn = f"huaweicloud:ecs:{instance.region}:{ecs_client.audited_account}:instance/{instance.id}"
 
             default_sgs = [
                 sg_id
@@ -24,14 +22,10 @@ class ecs_instance_no_default_security_group(Check):
 
             if default_sgs:
                 report.status = "FAIL"
-                report.status_extended = (
-                    f"ECS instance {instance.name} ({instance.id}) uses the default security group: {', '.join(default_sgs)}."
-                )
+                report.status_extended = f"ECS instance {instance.name} ({instance.id}) uses the default security group: {', '.join(default_sgs)}."
             else:
                 report.status = "PASS"
-                report.status_extended = (
-                    f"ECS instance {instance.name} ({instance.id}) does not use the default security group."
-                )
+                report.status_extended = f"ECS instance {instance.name} ({instance.id}) does not use the default security group."
 
             findings.append(report)
 

@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from pydantic.v1 import BaseModel
 
@@ -77,11 +76,11 @@ class IAM(HuaweiCloudService):
 
     def _get_password_policy(self):
         """Get the domain password policy."""
-        if not self.regional_clients:
+        if not self.client:
             return
 
-        region = list(self.regional_clients.keys())[0]
-        client = self.regional_clients[region]
+        region = self.region
+        client = self.client
         logger.info(f"IAM - Getting Password Policy from {region}...")
 
         try:
@@ -112,11 +111,11 @@ class IAM(HuaweiCloudService):
 
     def _list_users(self):
         """List all IAM users in the domain."""
-        if not self.regional_clients:
+        if not self.client:
             return
 
-        region = list(self.regional_clients.keys())[0]
-        client = self.regional_clients[region]
+        region = self.region
+        client = self.client
         logger.info(f"IAM - Listing Users in {region}...")
 
         try:
@@ -149,11 +148,11 @@ class IAM(HuaweiCloudService):
 
     def _list_mfa_devices(self):
         """List all virtual MFA devices in the domain."""
-        if not self.regional_clients:
+        if not self.client:
             return
 
-        region = list(self.regional_clients.keys())[0]
-        client = self.regional_clients[region]
+        region = self.region
+        client = self.client
         logger.info(f"IAM - Listing MFA Devices in {region}...")
 
         try:

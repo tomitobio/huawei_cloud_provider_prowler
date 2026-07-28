@@ -77,7 +77,6 @@ HUAWEICLOUD_SERVICE_SDK_MAPPING = {
     "elb": "huaweicloudsdkelb",
     "evs": "huaweicloudsdkevs",
     "eip": "huaweicloudsdkeip",
-    "ims": "huaweicloudsdkims",
     "dns": "huaweicloudsdkdns",
     "antiddos": "huaweicloudsdkantiddos",
     "cbr": "huaweicloudsdkcbr",

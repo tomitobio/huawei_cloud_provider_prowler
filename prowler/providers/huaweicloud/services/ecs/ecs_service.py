@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from pydantic.v1 import BaseModel
 
@@ -33,20 +32,14 @@ class ECS(HuaweiCloudService):
         self.instances["ecs-mock-001"] = Instance(
             id="ecs-mock-001", name="web-server-public", region=region,
             status="ACTIVE", public_ip="123.45.67.89",
-            key_name="web-keypair",
-            security_groups={"sg-mock-default": "default"},
         )
         self.instances["ecs-mock-002"] = Instance(
             id="ecs-mock-002", name="app-server-private", region=region,
             status="ACTIVE", public_ip="",
-            key_name="app-keypair",
-            security_groups={"sg-mock-restricted": "restricted-sg"},
         )
         self.instances["ecs-mock-003"] = Instance(
             id="ecs-mock-003", name="db-server-private", region=region,
             status="ACTIVE", public_ip="",
-            key_name="",
-            security_groups={},
         )
 
     def _list_servers_details(self, regional_client):
@@ -90,13 +83,13 @@ class ECS(HuaweiCloudService):
                                 id=server_data.id,
                                 name=getattr(server_data, "name", server_data.id),
                                 region=region,
-                                status=getattr(server_data, "status", ""),
+                                status=getattr(server_data, "status", None) or "",
                                 flavor=getattr(server_data, "flavor", None),
                                 public_ip=public_ip,
                                 vpc_id=self._extract_vpc_id(server_data),
-                                enterprise_project_id=getattr(server_data, "enterprise_project_id", ""),
+                                enterprise_project_id=getattr(server_data, "enterprise_project_id", None) or "",
                                 created_at=getattr(server_data, "created", None),
-                                key_name=getattr(server_data, "key_name", ""),
+                                key_name=getattr(server_data, "key_name", None) or "",
                                 security_groups=security_groups,
                             )
 

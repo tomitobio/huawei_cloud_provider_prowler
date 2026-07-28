@@ -12,9 +12,7 @@ class vpc_security_group_all_protocols_open(Check):
             report = CheckReportHuaweiCloud(metadata=self.metadata(), resource=sg)
             report.region = sg.region
             report.resource_id = sg.id
-            report.resource_arn = (
-                f"huaweicloud:vpc:{sg.region}:{vpc_client.audited_account}:security-group/{sg.id}"
-            )
+            report.resource_arn = f"huaweicloud:vpc:{sg.region}:{vpc_client.audited_account}:security-group/{sg.id}"
 
             all_protocol_rules = []
             for rule in sg.rules:
@@ -33,9 +31,7 @@ class vpc_security_group_all_protocols_open(Check):
                 )
             else:
                 report.status = "PASS"
-                report.status_extended = (
-                    f"Security group {sg.name} ({sg.id}) does not allow ingress from 0.0.0.0/0 on all ports/protocols."
-                )
+                report.status_extended = f"Security group {sg.name} ({sg.id}) does not allow ingress from 0.0.0.0/0 on all ports/protocols."
 
             findings.append(report)
 

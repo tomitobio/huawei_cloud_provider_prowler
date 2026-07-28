@@ -9,14 +9,10 @@ class rds_instance_disk_encryption(Check):
         findings = []
 
         for instance in rds_client.instances:
-            report = CheckReportHuaweiCloud(
-                metadata=self.metadata(), resource=instance
-            )
+            report = CheckReportHuaweiCloud(metadata=self.metadata(), resource=instance)
             report.region = instance.region
             report.resource_id = instance.id
-            report.resource_arn = (
-                f"huaweicloud:rds:{instance.region}:{rds_client.audited_account}:instance/{instance.id}"
-            )
+            report.resource_arn = f"huaweicloud:rds:{instance.region}:{rds_client.audited_account}:instance/{instance.id}"
 
             if instance.disk_encryption_id:
                 report.status = "PASS"
@@ -26,9 +22,7 @@ class rds_instance_disk_encryption(Check):
                 )
             else:
                 report.status = "FAIL"
-                report.status_extended = (
-                    f"RDS instance {instance.name} ({instance.id}) does not have disk encryption enabled."
-                )
+                report.status_extended = f"RDS instance {instance.name} ({instance.id}) does not have disk encryption enabled."
 
             findings.append(report)
 
