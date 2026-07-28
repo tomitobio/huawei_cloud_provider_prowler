@@ -1,0 +1,143 @@
+---
+title: 'Huawei Cloud Installation'
+---
+
+import { VersionBadge } from "/snippets/version-badge.mdx"
+
+<VersionBadge version="5.15.0" />
+
+Prowler includes built-in support for Huawei Cloud. This page covers how to install the Prowler CLI so you can start auditing your Huawei Cloud account.
+
+## Requirements
+
+- **Python >= 3.10, <= 3.13**
+- A Huawei Cloud account with an IAM user and AK/SK credentials. See the [Authentication guide](/user-guide/providers/huaweicloud/authentication) for details.
+- The Huawei Cloud Python SDK packages are installed automatically as dependencies of Prowler.
+
+## Install Prowler CLI
+
+<Tabs>
+  <Tab title="pipx">
+    [pipx](https://pipx.pypa.io/stable/) installs Python applications in isolated environments. This is the recommended method.
+
+    _Commands_:
+
+    ```bash
+    pipx install prowler
+    prowler -v
+    ```
+  </Tab>
+  <Tab title="pip">
+    <Warning>
+    This method modifies the chosen installation environment. Consider using pipx for global installation.
+    </Warning>
+
+    _Commands_:
+
+    ```bash
+    pip install prowler
+    prowler -v
+    ```
+  </Tab>
+  <Tab title="Docker">
+    _Requirements_:
+
+    * Have `docker` installed: https://docs.docker.com/get-docker/.
+    * Change `-v` to your local directory path to access the reports.
+
+    _Commands_:
+
+    ```bash
+    docker run -ti --rm -v /your/local/dir/prowler-output:/home/prowler/output \
+      --name prowler \
+      --env HUAWEICLOUD_ACCESS_KEY_ID \
+      --env HUAWEICLOUD_SECRET_ACCESS_KEY \
+      toniblyx/prowler:latest huaweicloud
+    ```
+  </Tab>
+  <Tab title="GitHub (uv)">
+    _Requirements for Developers_:
+
+    * `git`
+    * `uv` installed: [uv installation](https://docs.astral.sh/uv/getting-started/installation/).
+
+    _Commands_:
+
+    ```bash
+    git clone https://github.com/prowler-cloud/prowler
+    cd prowler
+    uv sync
+    uv run python prowler-cli.py huaweicloud -v
+    ```
+  </Tab>
+  <Tab title="Brew">
+    _Requirements_:
+
+    * `Brew` installed on Mac or Linux
+
+    _Commands_:
+
+    ```bash
+    brew install prowler
+    prowler -v
+    ```
+  </Tab>
+</Tabs>
+
+## Verify the Installation
+
+After installing, verify that the Huawei Cloud provider is available:
+
+```bash
+prowler huaweicloud --list-services
+```
+
+You should see the list of supported services (e.g., `iam`, `ecs`, `vpc`, `cts`, `elb`, `kms`, `obs`, `rds`, `waf`, etc.).
+
+## Update Prowler CLI
+
+Upgrade Prowler CLI to the latest release using the same method chosen for installation:
+
+<Tabs>
+  <Tab title="pipx">
+    ```bash
+    pipx upgrade prowler
+    prowler -v
+    ```
+  </Tab>
+  <Tab title="pip">
+    ```bash
+    pip install --upgrade prowler
+    prowler -v
+    ```
+  </Tab>
+  <Tab title="Docker">
+    ```bash
+    docker pull toniblyx/prowler:latest
+    ```
+  </Tab>
+  <Tab title="GitHub (uv)">
+    ```bash
+    cd prowler
+    git pull
+    uv sync
+    uv run python prowler-cli.py -v
+    ```
+  </Tab>
+  <Tab title="Brew">
+    ```bash
+    brew upgrade prowler
+    prowler -v
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  To install a specific version, pin it explicitly. For example: `pipx install prowler==<x.y.z>` or `pip install prowler==<x.y.z>`. Available releases are listed in the [Releases GitHub section](https://github.com/prowler-cloud/prowler/releases).
+</Note>
+
+## Next Steps
+
+- [Authentication](/user-guide/providers/huaweicloud/authentication) — configure AK/SK credentials
+- [Usage](/user-guide/providers/huaweicloud/usage) — scan commands and options
+- [Setup](/user-guide/providers/huaweicloud/setup) — end-to-end setup for Prowler Server and CLI
