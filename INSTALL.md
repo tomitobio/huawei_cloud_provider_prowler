@@ -223,7 +223,7 @@ This script:
 prowler huaweicloud --help
 ```
 
-You should see the Huawei Cloud provider help with `--access-key-id`, `--secret-access-key`, `--region`, and other options.
+You should see the Huawei Cloud provider help with `--access-key-id`, `--secret-access-key`, and other options.
 
 ---
 
@@ -286,15 +286,13 @@ pip install huaweicloudsdkcore huaweicloudsdkbms huaweicloudsdkcbr huaweicloudsd
 3. Click **Create Access Key**
 4. Save the **Access Key ID** (AK) and **Secret Access Key** (SK) — the SK is only shown once
 
-You also need your **Project ID** (required for regional services):
-- Found under **My Credentials** → **Projects** → copy the Project ID for your region
-
 ### Using Environment Variables (Recommended)
+
+Only AK/SK are required — the SDK auto-derives Project ID and Domain ID from your credentials via IAM:
 
 ```bash
 export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
 export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
-export HUAWEICLOUD_PROJECT_ID="your-project-id"
 ```
 
 Alternative shorter variable names also work:
@@ -302,7 +300,6 @@ Alternative shorter variable names also work:
 ```bash
 export HW_ACCESS_KEY="your-access-key-id"
 export HW_SECRET_KEY="your-secret-access-key"
-export HW_PROJECT_ID="your-project-id"
 ```
 
 ### Using CLI Arguments
@@ -312,16 +309,16 @@ Pass credentials directly on the command line (not recommended for production �
 ```bash
 prowler huaweicloud \
     --access-key-id "your-access-key-id" \
-    --secret-access-key "your-secret-access-key" \
-    --project-id "your-project-id" \
-    --region cn-north-4
+    --secret-access-key "your-secret-access-key"
 ```
 
-### Optional Credentials
+### Optional Arguments
 
 | Argument | Env Variable | Description |
 |----------|-------------|-------------|
-| `--domain-id` | `HUAWEICLOUD_DOMAIN_ID` / `HW_DOMAIN_ID` | Domain ID (account-level operations) |
+| `--region` | — | Region ID(s) (default: `cn-north-4`; pass multiple for multi-region) |
+| `--project-id` | `HUAWEICLOUD_PROJECT_ID` / `HW_PROJECT_ID` | Project ID (auto-derived if not set) |
+| `--domain-id` | `HUAWEICLOUD_DOMAIN_ID` / `HW_DOMAIN_ID` | Domain ID (auto-derived if not set) |
 | `--security-token` | `HUAWEICLOUD_SECURITY_TOKEN` | Security token for temporary credentials (STS) |
 | `--agency-name` | — | Agency name for cross-account access |
 | `--delegation-domain-id` | — | Domain ID of the delegating account |
@@ -333,10 +330,10 @@ prowler huaweicloud \
 ### Basic Scan
 
 ```bash
-prowler huaweicloud --region cn-north-4
+prowler huaweicloud
 ```
 
-(Credentials read from environment variables.)
+(Credentials read from environment variables. Defaults to region `cn-north-4`.)
 
 ### Multi-Region Scan
 
@@ -353,35 +350,35 @@ prowler huaweicloud --list-checks
 ### Run Specific Checks
 
 ```bash
-prowler huaweicloud --checks iam_user_mfa_enabled,ecs_instance_public_ip --region cn-north-4
+prowler huaweicloud --checks iam_user_mfa_enabled,ecs_instance_public_ip
 ```
 
 ### Run by Severity
 
 ```bash
-prowler huaweicloud --severity critical,high --region cn-north-4
+prowler huaweicloud --severity critical,high
 ```
 
 ### Run by Service
 
 ```bash
-prowler huaweicloud --services iam,ecs,obs --region cn-north-4
+prowler huaweicloud --services iam,ecs,obs
 ```
 
 ### Output Formats
 
 ```bash
 # JSON
-prowler huaweicloud --region cn-north-4 -M json
+prowler huaweicloud -M json
 
 # CSV
-prowler huaweicloud --region cn-north-4 -M csv
+prowler huaweicloud -M csv
 
 # HTML
-prowler huaweicloud --region cn-north-4 -M html
+prowler huaweicloud -M html
 
 # Multiple formats
-prowler huaweicloud --region cn-north-4 -M json csv html
+prowler huaweicloud -M json csv html
 ```
 
 ### Supported Regions
@@ -436,7 +433,6 @@ The provider includes a **CIS Huawei Cloud 1.0** compliance benchmark mapping 21
 
 ```bash
 prowler huaweicloud \
-    --region cn-north-4 \
     --compliance cis_1.0_huaweicloud
 ```
 
@@ -511,9 +507,8 @@ docker run --rm \
     -v "$(pwd)/prowler/compliance/huaweicloud:/prowler/prowler/compliance/huaweicloud" \
     -e HUAWEICLOUD_ACCESS_KEY_ID \
     -e HUAWEICLOUD_SECRET_ACCESS_KEY \
-    -e HUAWEICLOUD_PROJECT_ID \
     prowlercloud/prowler:5.31.0 \
-    huaweicloud --region cn-north-4
+    huaweicloud
 ```
 
 > **Note:** When using Docker, you still need to apply the core patches. Build a custom image with a Dockerfile that runs `scripts/setup-prowler.sh` after installing Prowler.
@@ -534,9 +529,8 @@ docker build -t prowler-huaweicloud .
 docker run --rm \
     -e HUAWEICLOUD_ACCESS_KEY_ID \
     -e HUAWEICLOUD_SECRET_ACCESS_KEY \
-    -e HUAWEICLOUD_PROJECT_ID \
     prowler-huaweicloud \
-    huaweicloud --region cn-north-4
+    huaweicloud
 ```
 
 ---
@@ -619,8 +613,7 @@ pip install huaweicloudsdkcore huaweicloudsdkbms huaweicloudsdkcbr huaweicloudsd
 bash scripts/setup-prowler.sh python && \
 export HUAWEICLOUD_ACCESS_KEY_ID="YOUR_AK" && \
 export HUAWEICLOUD_SECRET_ACCESS_KEY="YOUR_SK" && \
-export HUAWEICLOUD_PROJECT_ID="YOUR_PROJECT_ID" && \
-prowler huaweicloud --region cn-north-4
+prowler huaweicloud
 ```
 
 ---
@@ -688,10 +681,8 @@ curl -X POST http://localhost:8000/api/scan \
     -H "Content-Type: application/json" \
     -d '{
         "provider": "huaweicloud",
-        "regions": ["cn-north-4"],
         "access_key_id": "'"$HUAWEICLOUD_ACCESS_KEY_ID"'",
-        "secret_access_key": "'"$HUAWEICLOUD_SECRET_ACCESS_KEY"'",
-        "project_id": "'"$HUAWEICLOUD_PROJECT_ID"'"
+        "secret_access_key": "'"$HUAWEICLOUD_SECRET_ACCESS_KEY"'"
     }'
 ```
 
@@ -712,7 +703,6 @@ services:
     environment:
       - HUAWEICLOUD_ACCESS_KEY_ID=${HUAWEICLOUD_ACCESS_KEY_ID}
       - HUAWEICLOUD_SECRET_ACCESS_KEY=${HUAWEICLOUD_SECRET_ACCESS_KEY}
-      - HUAWEICLOUD_PROJECT_ID=${HUAWEICLOUD_PROJECT_ID}
     volumes:
       - prowler-data:/prowler/data
       - ./prowler/providers/huaweicloud:/prowler/prowler/providers/huaweicloud
