@@ -562,7 +562,6 @@ No credentials were found. Set the environment variables or pass `--access-key-i
 ```bash
 export HUAWEICLOUD_ACCESS_KEY_ID="your-ak"
 export HUAWEICLOUD_SECRET_ACCESS_KEY="your-sk"
-export HUAWEICLOUD_PROJECT_ID="your-project-id"
 ```
 
 ### `HuaweiCloudInvalidCredentialsError`

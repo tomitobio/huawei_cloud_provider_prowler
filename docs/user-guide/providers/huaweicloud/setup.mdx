@@ -25,7 +25,6 @@ pipx install prowler
 
 export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
 export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
-export HUAWEICLOUD_PROJECT_ID="your-project-id"
 
 prowler huaweicloud
 ```
@@ -75,9 +74,14 @@ Do not use the AK/SK pair of your main Huawei Cloud account. Create a dedicated 
 
 For the full list of services and custom policy guidance, see the [Authentication guide](/user-guide/providers/huaweicloud/authentication#permissions-guidance).
 
-### Step 3: Get Your Project ID
+### Step 3: (Optional) Get Your Project ID
 
-Prowler needs a **Project ID** to access regional services. To find it:
+Prowler auto-derives the **Project ID** from your AK/SK via IAM, so you typically do **not** need to set it manually. You only need it if:
+
+- You want to scan a specific project different from the default
+- Your IAM user has access to multiple projects and you need to target a non-default one
+
+To find your Project ID:
 
 1. Log in to the [Huawei Cloud Console](https://console.huaweicloud.com/).
 2. Click your profile avatar in the top-right corner.
@@ -85,7 +89,7 @@ Prowler needs a **Project ID** to access regional services. To find it:
 4. Copy the **Project ID** from the project details.
 
 <Note>
-The Project ID is region-specific. If you scan multiple regions, you need the Project ID for each region. Set the default region's Project ID via `HUAWEICLOUD_PROJECT_ID` and pass additional ones as needed.
+The Project ID is region-specific. If you scan multiple regions and need a specific project, set it via `HUAWEICLOUD_PROJECT_ID` or pass `--project-id`. Otherwise, Prowler derives it automatically.
 </Note>
 
 ### Step 4: Configure Credentials
@@ -97,7 +101,6 @@ Choose one of the following methods:
     ```bash
     export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
     export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
-    export HUAWEICLOUD_PROJECT_ID="your-project-id"
     ```
 
     Add these to your shell profile (`~/.bashrc`, `~/.zshrc`) for persistence, or use a secrets manager for CI/CD.
@@ -106,8 +109,7 @@ Choose one of the following methods:
     ```bash
     prowler huaweicloud \
       --access-key-id "your-access-key-id" \
-      --secret-access-key "your-secret-access-key" \
-      --project-id "your-project-id"
+      --secret-access-key "your-secret-access-key"
     ```
   </Tab>
   <Tab title="Docker">
@@ -116,7 +118,6 @@ Choose one of the following methods:
       -v /your/local/dir/prowler-output:/home/prowler/output \
       --env HUAWEICLOUD_ACCESS_KEY_ID \
       --env HUAWEICLOUD_SECRET_ACCESS_KEY \
-      --env HUAWEICLOUD_PROJECT_ID \
       toniblyx/prowler:latest huaweicloud
     ```
   </Tab>
@@ -239,7 +240,6 @@ jobs:
         env:
           HUAWEICLOUD_ACCESS_KEY_ID: ${{ secrets.HUAWEICLOUD_ACCESS_KEY_ID }}
           HUAWEICLOUD_SECRET_ACCESS_KEY: ${{ secrets.HUAWEICLOUD_SECRET_ACCESS_KEY }}
-          HUAWEICLOUD_PROJECT_ID: ${{ secrets.HUAWEICLOUD_PROJECT_ID }}
         run: |
           prowler huaweicloud \
             --region cn-north-4 \
@@ -272,7 +272,6 @@ prowler-huaweicloud:
   variables:
     HUAWEICLOUD_ACCESS_KEY_ID: $HUAWEICLOUD_ACCESS_KEY_ID
     HUAWEICLOUD_SECRET_ACCESS_KEY: $HUAWEICLOUD_SECRET_ACCESS_KEY
-    HUAWEICLOUD_PROJECT_ID: $HUAWEICLOUD_PROJECT_ID
 ```
 
 <Note>
@@ -303,7 +302,7 @@ ERROR: Failed to list ECS servers: Unauthorized
 ERROR: Project ID is required for regional services.
 ```
 
-**Fix**: Set `HUAWEICLOUD_PROJECT_ID` or pass `--project-id`. Find it in the Huawei Cloud Console under your project settings.
+**Fix**: Prowler normally auto-derives the Project ID from your AK/SK. If auto-derivation fails (e.g., your IAM user lacks permission to list projects), set `HUAWEICLOUD_PROJECT_ID` or pass `--project-id` explicitly. Find it in the Huawei Cloud Console under your project settings.
 
 ### Region Not Supported
 

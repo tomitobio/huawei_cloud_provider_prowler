@@ -21,7 +21,6 @@ With credentials passed via environment variables:
 ```bash
 export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key-id"
 export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-access-key"
-export HUAWEICLOUD_PROJECT_ID="your-project-id"
 
 prowler huaweicloud
 ```
@@ -302,7 +301,7 @@ All credentials and some options can be set via environment variables. `HUAWEICL
 | --- | --- | --- |
 | `HUAWEICLOUD_ACCESS_KEY_ID` / `HW_ACCESS_KEY_ID` | `--access-key-id` | Access Key ID |
 | `HUAWEICLOUD_SECRET_ACCESS_KEY` / `HW_SECRET_ACCESS_KEY` | `--secret-access-key` | Secret Access Key |
-| `HUAWEICLOUD_PROJECT_ID` / `HW_PROJECT_ID` | `--project-id` | Project ID (required for regional services) |
+| `HUAWEICLOUD_PROJECT_ID` / `HW_PROJECT_ID` | `--project-id` | Project ID (optional — auto-derived via IAM) |
 | `HUAWEICLOUD_DOMAIN_ID` / `HW_DOMAIN_ID` | `--domain-id` | Domain ID |
 | `HUAWEICLOUD_SECURITY_TOKEN` | `--security-token` | Security token for temporary credentials |
 | `HUAWEICLOUD_MOCK_AUTH` | — | Set to `true` for mock authentication (development only) |
@@ -315,7 +314,7 @@ All credentials and some options can be set via environment variables. `HUAWEICL
 | --- | --- |
 | `--access-key-id` | Huawei Cloud Access Key ID |
 | `--secret-access-key` | Huawei Cloud Secret Access Key |
-| `--project-id` | Huawei Cloud Project ID (required for regional services) |
+| `--project-id` | Huawei Cloud Project ID (optional — auto-derived via IAM) |
 | `--domain-id` | Huawei Cloud Domain ID |
 | `--security-token` | Security token for temporary credentials |
 | `--agency-name` | Name of the agency to assume for cross-account access |
