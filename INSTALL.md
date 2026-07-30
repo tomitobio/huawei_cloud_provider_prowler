@@ -617,17 +617,17 @@ prowler huaweicloud
 
 ---
 
-## 11. Prowler Server Web UI Dashboard
+## 11. Prowler Dashboard (Web UI)
 
-Prowler includes a built-in web server with a dashboard UI for viewing and managing scan results visually. This is useful for teams who want a centralized view of security findings without parsing JSON/CSV files.
+Prowler includes a built-in web dashboard for visualizing scan results. The dashboard reads CSV files from the `./output` directory and presents findings and compliance status in an interactive UI. This is useful for teams who want a visual overview of security findings without parsing JSON/CSV files manually.
 
-### Step 1 — Install Prowler API/Server Dependencies
+### Step 1 — Install Prowler
 
 ```bash
 pip install prowler==5.31.0
 ```
 
-The Prowler server is included in the standard package — no extra installation is needed.
+The dashboard is included in the standard package — no extra installation is needed.
 
 ### Step 2 — Apply the Provider Patches
 
@@ -637,115 +637,107 @@ Ensure the Huawei Cloud provider is installed and patched:
 bash scripts/setup-prowler.sh python
 ```
 
-### Step 3 — Start the Prowler Server
+### Step 3 — Run a Scan (Generate Output)
+
+The dashboard reads CSV files from `./output`. Run a scan first to generate the data:
 
 ```bash
-prowler server
+export HUAWEICLOUD_ACCESS_KEY_ID="your-access-key"
+export HUAWEICLOUD_SECRET_ACCESS_KEY="your-secret-key"
+
+prowler huaweicloud --output-formats csv json
 ```
 
-By default the server starts on `http://localhost:8000`.
+This creates CSV files under `./output/` that the dashboard will load automatically.
 
-To run on a different host/port:
+### Step 4 — Start the Dashboard
 
 ```bash
-prowler server --host 0.0.0.0 --port 8080
+prowler dashboard
 ```
 
-### Step 4 — Open the Dashboard
+The dashboard starts on **port 11666** at `http://localhost:11666`.
+
+> **Note:** The port (11666) and host (`127.0.0.1`) are hardcoded in the Prowler package. There are no `--host` or `--port` CLI arguments for `prowler dashboard`.
+
+### Step 5 — Open the Dashboard
 
 Open your browser and navigate to:
 
 ```
-http://localhost:8000
+http://localhost:11666
 ```
 
-You will see the Prowler dashboard with options to:
+You will see the Prowler dashboard with:
 
-- **View findings** — browse all scan results with filters by provider, service, severity, and status
-- **Run scans** — trigger new scans directly from the UI (requires credentials configured)
-- **Compare scans** — diff findings between two scan runs to track changes over time
-- **Export reports** — download results as JSON, CSV, or HTML from the UI
-- **View compliance** — see CIS benchmark compliance status at a glance
+- **Overview** — browse all scan findings with filters by provider, service, severity, and status
+- **Compliance** — view CIS benchmark compliance status at a glance; select `cis_1.0_huaweicloud` to see Huawei Cloud results
 
 ### Connecting from a Virtual Machine
 
-When Prowler Server runs on a remote VM (e.g., Huawei Cloud ECS), `localhost` only works from the VM itself. To access the dashboard from your local browser:
+When Prowler runs on a remote VM (e.g., Huawei Cloud ECS), the dashboard binds to `127.0.0.1` and is only accessible from the VM itself. Since `prowler dashboard` does not accept `--host`/`--port` arguments, use **SSH port forwarding** to access it from your local browser:
 
-1. **Bind to all interfaces** — start the server with `--host 0.0.0.0`:
+1. **Start the dashboard on the VM:**
 
    ```bash
-   prowler server --host 0.0.0.0 --port 8000
+   prowler dashboard
    ```
 
-2. **Open the security group** — in the Huawei Cloud console, add an inbound rule to the VM's security group allowing TCP port `8000` (or whichever port you chose) from your IP range (e.g., `0.0.0.0/0` for anywhere — restrict in production).
+2. **From your local machine**, establish an SSH tunnel:
 
-3. **Connect via the VM's public IP** — open in your browser:
-
-   ```
-   http://<VM_PUBLIC_IP>:8000
+   ```bash
+   ssh -L 11666:localhost:11666 <user>@<VM_PUBLIC_IP>
    ```
 
-   Replace `<VM_PUBLIC_IP>` with the elastic public IP (EIP) attached to your ECS instance.
+   Replace `<VM_PUBLIC_IP>` with the elastic public IP (EIP) attached to your ECS instance and `<user>` with your SSH username (e.g., `root`).
 
-> **Security warning:** Binding to `0.0.0.0` exposes the server on all network interfaces. Always use a security group or firewall to restrict access to trusted IPs only. For production, put a reverse proxy (nginx/Apache) with TLS and authentication in front.
+3. **Open the dashboard** in your local browser:
 
-### Step 5 — Run a Scan via the API
+   ```
+   http://localhost:11666
+   ```
 
-You can also trigger scans programmatically via the REST API:
+   The SSH tunnel forwards your local port 11666 to the VM's port 11666.
 
-```bash
-# Start the server first
-prowler server &
+> **Security note:** SSH port forwarding is the recommended approach — it avoids exposing the dashboard to the internet and requires no security group changes. If you need direct access without a tunnel, put a reverse proxy (nginx/Apache) with TLS and authentication in front, forwarding to `127.0.0.1:11666`.
 
-# Trigger a Huawei Cloud scan via API
-curl -X POST http://localhost:8000/api/scan \
-    -H "Content-Type: application/json" \
-    -d '{
-        "provider": "huaweicloud",
-        "access_key_id": "'"$HUAWEICLOUD_ACCESS_KEY_ID"'",
-        "secret_access_key": "'"$HUAWEICLOUD_SECRET_ACCESS_KEY"'"
-    }'
-```
-
-### Step 6 — Docker Compose with Dashboard
-
-For a production deployment with a persistent database and dashboard:
+### Step 6 — Docker with Dashboard
 
 ```bash
 # docker-compose.yml
 cat > docker-compose.yml << 'EOF'
 version: "3.8"
 services:
-  prowler-server:
+  prowler-dashboard:
     image: prowlercloud/prowler:5.31.0
-    command: server --host 0.0.0.0 --port 8000
+    command: dashboard
     ports:
-      - "8000:8000"
+      - "11666:11666"
     environment:
       - HUAWEICLOUD_ACCESS_KEY_ID=${HUAWEICLOUD_ACCESS_KEY_ID}
       - HUAWEICLOUD_SECRET_ACCESS_KEY=${HUAWEICLOUD_SECRET_ACCESS_KEY}
     volumes:
-      - prowler-data:/prowler/data
+      - prowler-output:/prowler/output
       - ./prowler/providers/huaweicloud:/prowler/prowler/providers/huaweicloud
       - ./prowler/compliance/huaweicloud:/prowler/prowler/compliance/huaweicloud
 
 volumes:
-  prowler-data:
+  prowler-output:
 EOF
 
 docker compose up -d
 ```
 
-Then open `http://localhost:8000`.
+Then open `http://localhost:11666`.
 
-> **Note:** When using Docker, you still need to apply the core patches. Build a custom image with a Dockerfile that runs `scripts/setup-prowler.sh` after installing Prowler (see [Section 9](#9-docker-deployment)).
+> **Note:** You still need to run a scan inside the container first to generate CSV output in `/prowler/output`. When using Docker, you also need to apply the core patches — build a custom image with a Dockerfile that runs `scripts/setup-prowler.sh` after installing Prowler (see [Section 9](#9-docker-deployment)).
 
 ### Dashboard Tips
 
 | Tip | Description |
 |-----|-------------|
-| **Persistent storage** | Mount a volume to `/prowler/data` so scan results survive container restarts |
-| **Authentication** | Prowler server supports API key authentication — configure it for production deployments |
-| **Reverse proxy** | Put nginx or Apache in front for TLS termination and access control |
+| **Scan first** | The dashboard reads CSV files from `./output` — always run `prowler huaweicloud --output-formats csv` before starting the dashboard |
+| **Persistent storage** | Mount a volume to `/prowler/output` so scan results survive container restarts |
 | **Multi-provider** | The dashboard shows all providers — filter by `huaweicloud` to see only Huawei Cloud findings |
 | **Compliance view** | Navigate to the Compliance tab and select `cis_1.0_huaweicloud` to see benchmark results |
+| **Re-scan to refresh** | To update the dashboard with new data, run a new scan and restart `prowler dashboard` |
