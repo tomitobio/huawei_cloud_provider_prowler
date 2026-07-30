@@ -44,7 +44,7 @@ sudo apt update
 sudo apt install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install -y python3.12 python3.12-dev
+sudo apt install -y python3.12 python3.12-venv python3.12-dev
 ```
 
 Verify:
@@ -91,34 +91,13 @@ cd ..
 python3.12 --version
 ```
 
-#### 1.2 — Make Python 3.12 the Default
+#### 1.2 — Create a Virtual Environment
 
-So that `python` and `pip` refer to 3.12 system-wide:
-
-**Ubuntu / Debian (using `update-alternatives`):**
+Using `venv` (recommended):
 
 ```bash
-sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
-sudo update-alternatives --install /usr/bin/pip pip /usr/bin/pip3.12 1
-```
-
-If `pip3.12` doesn't exist, create it:
-
-```bash
-sudo python3.12 -m ensurepip --upgrade
-sudo ln -s /usr/bin/python3.12 -m pip /usr/bin/pip3.12 2>/dev/null || true
-```
-
-**CentOS / RHEL / Fedora:**
-
-```bash
-sudo alternatives --set python /usr/bin/python3.12
-```
-
-**macOS (Homebrew):**
-
-```bash
-brew link --force python@3.12
+python3.12 -m venv .venv
+source .venv/bin/activate
 ```
 
 Verify:
@@ -130,24 +109,21 @@ pip --version
 # pip xx.x from ... (python 3.12)
 ```
 
-> **Note:** If you prefer not to change the system default, replace `python` and `pip` with `python3.12` and `pip3.12` in all commands throughout this guide.
+> You must activate the virtual environment (`source .venv/bin/activate`) in every new terminal session before running Prowler or tests.
+
+Alternatively, using `uv` (faster):
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+```
 
 #### 1.3 — Upgrade pip
 
 ```bash
 pip install --upgrade pip
 ```
-
-> **Note on system-wide installs:** On some Linux distributions (e.g. Ubuntu 24.04, Debian 12), pip refuses to install packages system-wide by default. If you get an "externally-managed-environment" error, either:
-> - Add `--break-system-packages` to your `pip install` commands, or
-> - Use `sudo pip install ...` (not recommended for security reasons), or
-> - Create a virtual environment after all (see below).
->
-> If you do want to use a virtual environment, run:
-> ```bash
-> python3.12 -m venv .venv && source .venv/bin/activate
-> ```
-> and activate it (`source .venv/bin/activate`) in every new terminal session.
 
 #### 1.4 — Install Git
 
