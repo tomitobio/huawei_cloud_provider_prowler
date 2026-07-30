@@ -21,13 +21,145 @@ This guide covers installing Prowler with the Huawei Cloud provider, authenticat
 
 ## 1. Prerequisites
 
+### Summary
+
 | Requirement | Version |
 |-------------|---------|
 | Python | 3.12+ |
-| pip | latest |
-| Git | any |
+| pip | latest (bundled with Python) |
+| Git | any recent version |
+| Huawei Cloud SDK | 28 packages (installed in Section 4) |
+| Prowler | 5.31.0 (installed in Section 3) |
+| Huawei Cloud account | with Access Key ID + Secret Access Key (see Section 5) |
 
-You also need a Huawei Cloud account with an **Access Key ID** and **Secret Access Key** (see [Section 5](#5-huawei-cloud-credentials)).
+### Step-by-Step Installation
+
+#### 1.1 — Install Python 3.12+
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt update
+sudo apt install -y software-properties-common
+sudo add-apt-repository -y ppa:deadsnakes/ppa
+sudo apt update
+sudo apt install -y python3.12 python3.12-venv python3.12-dev
+```
+
+Verify:
+
+```bash
+python3.12 --version
+# Python 3.12.x
+```
+
+**CentOS / RHEL / Fedora:**
+
+```bash
+sudo dnf install -y python3.12 python3.12-devel
+```
+
+Verify:
+
+```bash
+python3.12 --version
+```
+
+**macOS (Homebrew):**
+
+```bash
+brew install python@3.12
+```
+
+Verify:
+
+```bash
+python3.12 --version
+```
+
+**From source (any Linux):**
+
+```bash
+curl -O https://www.python.org/ftp/python/3.12.7/Python-3.12.7.tgz
+tar -xzf Python-3.12.7.tgz
+cd Python-3.12.7
+./configure --enable-optimizations
+make -j$(nproc)
+sudo make altinstall
+cd ..
+python3.12 --version
+```
+
+#### 1.2 — Create a Virtual Environment
+
+Using `venv` (recommended):
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+```
+
+Verify:
+
+```bash
+python --version
+# Python 3.12.x
+pip --version
+# pip xx.x from ... (python 3.12)
+```
+
+> You must activate the virtual environment (`source .venv/bin/activate`) in every new terminal session before running Prowler or tests.
+
+Alternatively, using `uv` (faster):
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv venv --python 3.12 .venv
+source .venv/bin/activate
+```
+
+#### 1.3 — Upgrade pip
+
+```bash
+pip install --upgrade pip
+```
+
+#### 1.4 — Install Git
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt install -y git
+```
+
+**CentOS / RHEL / Fedora:**
+
+```bash
+sudo dnf install -y git
+```
+
+**macOS:**
+
+```bash
+brew install git
+```
+
+Verify:
+
+```bash
+git --version
+# git version 2.x.x
+```
+
+#### 1.5 — Huawei Cloud Account
+
+You need a Huawei Cloud account with an **Access Key ID** and **Secret Access Key**. If you don't have one:
+
+1. Sign up at [https://www.huaweicloud.com/](https://www.huaweicloud.com/)
+2. Create access keys in the console under **My Credentials** → **Access Keys** → **Create Access Key**
+3. Note down your **Project ID** (found under **My Credentials** → **Projects**)
+
+See [Section 5](#5-huawei-cloud-credentials) for full details.
 
 ---
 
