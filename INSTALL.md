@@ -667,6 +667,28 @@ You will see the Prowler dashboard with options to:
 - **Export reports** — download results as JSON, CSV, or HTML from the UI
 - **View compliance** — see CIS benchmark compliance status at a glance
 
+### Connecting from a Virtual Machine
+
+When Prowler Server runs on a remote VM (e.g., Huawei Cloud ECS), `localhost` only works from the VM itself. To access the dashboard from your local browser:
+
+1. **Bind to all interfaces** — start the server with `--host 0.0.0.0`:
+
+   ```bash
+   prowler server --host 0.0.0.0 --port 8000
+   ```
+
+2. **Open the security group** — in the Huawei Cloud console, add an inbound rule to the VM's security group allowing TCP port `8000` (or whichever port you chose) from your IP range (e.g., `0.0.0.0/0` for anywhere — restrict in production).
+
+3. **Connect via the VM's public IP** — open in your browser:
+
+   ```
+   http://<VM_PUBLIC_IP>:8000
+   ```
+
+   Replace `<VM_PUBLIC_IP>` with the elastic public IP (EIP) attached to your ECS instance.
+
+> **Security warning:** Binding to `0.0.0.0` exposes the server on all network interfaces. Always use a security group or firewall to restrict access to trusted IPs only. For production, put a reverse proxy (nginx/Apache) with TLS and authentication in front.
+
 ### Step 5 — Run a Scan via the API
 
 You can also trigger scans programmatically via the REST API:
