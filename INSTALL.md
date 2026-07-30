@@ -16,6 +16,7 @@ This guide covers installing Prowler with the Huawei Cloud provider, authenticat
 8. [Running Tests](#8-running-tests)
 9. [Docker Deployment](#9-docker-deployment)
 10. [Troubleshooting](#10-troubleshooting)
+11. [Prowler Server Web UI Dashboard](#11-prowler-server-web-ui-dashboard)
 
 ---
 
@@ -43,7 +44,7 @@ sudo apt update
 sudo apt install -y software-properties-common
 sudo add-apt-repository -y ppa:deadsnakes/ppa
 sudo apt update
-sudo apt install -y python3.12 python3.12-venv python3.12-dev
+sudo apt install -y python3.12 python3.12-dev
 ```
 
 Verify:
@@ -90,13 +91,34 @@ cd ..
 python3.12 --version
 ```
 
-#### 1.2 — Create a Virtual Environment
+#### 1.2 — Make Python 3.12 the Default
 
-Using `venv` (recommended):
+So that `python` and `pip` refer to 3.12 system-wide:
+
+**Ubuntu / Debian (using `update-alternatives`):**
 
 ```bash
-python3.12 -m venv .venv
-source .venv/bin/activate
+sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
+sudo update-alternatives --install /usr/bin/pip pip /usr/bin/pip3.12 1
+```
+
+If `pip3.12` doesn't exist, create it:
+
+```bash
+sudo python3.12 -m ensurepip --upgrade
+sudo ln -s /usr/bin/python3.12 -m pip /usr/bin/pip3.12 2>/dev/null || true
+```
+
+**CentOS / RHEL / Fedora:**
+
+```bash
+sudo alternatives --set python /usr/bin/python3.12
+```
+
+**macOS (Homebrew):**
+
+```bash
+brew link --force python@3.12
 ```
 
 Verify:
@@ -108,21 +130,24 @@ pip --version
 # pip xx.x from ... (python 3.12)
 ```
 
-> You must activate the virtual environment (`source .venv/bin/activate`) in every new terminal session before running Prowler or tests.
-
-Alternatively, using `uv` (faster):
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-uv venv --python 3.12 .venv
-source .venv/bin/activate
-```
+> **Note:** If you prefer not to change the system default, replace `python` and `pip` with `python3.12` and `pip3.12` in all commands throughout this guide.
 
 #### 1.3 — Upgrade pip
 
 ```bash
 pip install --upgrade pip
 ```
+
+> **Note on system-wide installs:** On some Linux distributions (e.g. Ubuntu 24.04, Debian 12), pip refuses to install packages system-wide by default. If you get an "externally-managed-environment" error, either:
+> - Add `--break-system-packages` to your `pip install` commands, or
+> - Use `sudo pip install ...` (not recommended for security reasons), or
+> - Create a virtual environment after all (see below).
+>
+> If you do want to use a virtual environment, run:
+> ```bash
+> python3.12 -m venv .venv && source .venv/bin/activate
+> ```
+> and activate it (`source .venv/bin/activate`) in every new terminal session.
 
 #### 1.4 — Install Git
 
@@ -621,3 +646,119 @@ export HUAWEICLOUD_SECRET_ACCESS_KEY="YOUR_SK" && \
 export HUAWEICLOUD_PROJECT_ID="YOUR_PROJECT_ID" && \
 prowler huaweicloud --region cn-north-4
 ```
+
+---
+
+## 11. Prowler Server Web UI Dashboard
+
+Prowler includes a built-in web server with a dashboard UI for viewing and managing scan results visually. This is useful for teams who want a centralized view of security findings without parsing JSON/CSV files.
+
+### Step 1 — Install Prowler API/Server Dependencies
+
+```bash
+pip install prowler==5.31.0
+```
+
+The Prowler server is included in the standard package — no extra installation is needed.
+
+### Step 2 — Apply the Provider Patches
+
+Ensure the Huawei Cloud provider is installed and patched:
+
+```bash
+bash scripts/setup-prowler.sh python
+```
+
+### Step 3 — Start the Prowler Server
+
+```bash
+prowler server
+```
+
+By default the server starts on `http://localhost:8000`.
+
+To run on a different host/port:
+
+```bash
+prowler server --host 0.0.0.0 --port 8080
+```
+
+### Step 4 — Open the Dashboard
+
+Open your browser and navigate to:
+
+```
+http://localhost:8000
+```
+
+You will see the Prowler dashboard with options to:
+
+- **View findings** — browse all scan results with filters by provider, service, severity, and status
+- **Run scans** — trigger new scans directly from the UI (requires credentials configured)
+- **Compare scans** — diff findings between two scan runs to track changes over time
+- **Export reports** — download results as JSON, CSV, or HTML from the UI
+- **View compliance** — see CIS benchmark compliance status at a glance
+
+### Step 5 — Run a Scan via the API
+
+You can also trigger scans programmatically via the REST API:
+
+```bash
+# Start the server first
+prowler server &
+
+# Trigger a Huawei Cloud scan via API
+curl -X POST http://localhost:8000/api/scan \
+    -H "Content-Type: application/json" \
+    -d '{
+        "provider": "huaweicloud",
+        "regions": ["cn-north-4"],
+        "access_key_id": "'"$HUAWEICLOUD_ACCESS_KEY_ID"'",
+        "secret_access_key": "'"$HUAWEICLOUD_SECRET_ACCESS_KEY"'",
+        "project_id": "'"$HUAWEICLOUD_PROJECT_ID"'"
+    }'
+```
+
+### Step 6 — Docker Compose with Dashboard
+
+For a production deployment with a persistent database and dashboard:
+
+```bash
+# docker-compose.yml
+cat > docker-compose.yml << 'EOF'
+version: "3.8"
+services:
+  prowler-server:
+    image: prowlercloud/prowler:5.31.0
+    command: server --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - HUAWEICLOUD_ACCESS_KEY_ID=${HUAWEICLOUD_ACCESS_KEY_ID}
+      - HUAWEICLOUD_SECRET_ACCESS_KEY=${HUAWEICLOUD_SECRET_ACCESS_KEY}
+      - HUAWEICLOUD_PROJECT_ID=${HUAWEICLOUD_PROJECT_ID}
+    volumes:
+      - prowler-data:/prowler/data
+      - ./prowler/providers/huaweicloud:/prowler/prowler/providers/huaweicloud
+      - ./prowler/compliance/huaweicloud:/prowler/prowler/compliance/huaweicloud
+
+volumes:
+  prowler-data:
+EOF
+
+docker compose up -d
+```
+
+Then open `http://localhost:8000`.
+
+> **Note:** When using Docker, you still need to apply the core patches. Build a custom image with a Dockerfile that runs `scripts/setup-prowler.sh` after installing Prowler (see [Section 9](#9-docker-deployment)).
+
+### Dashboard Tips
+
+| Tip | Description |
+|-----|-------------|
+| **Persistent storage** | Mount a volume to `/prowler/data` so scan results survive container restarts |
+| **Authentication** | Prowler server supports API key authentication — configure it for production deployments |
+| **Reverse proxy** | Put nginx or Apache in front for TLS termination and access control |
+| **Multi-provider** | The dashboard shows all providers — filter by `huaweicloud` to see only Huawei Cloud findings |
+| **Compliance view** | Navigate to the Compliance tab and select `cis_1.0_huaweicloud` to see benchmark results |
